@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS cards (
         name VARCHAR(50) NOT NULL,
         hash_card_number TEXT NOT NULL,
         hash_card_holder TEXT,
-        expiry_date TIMESTAMP,
+        expiry_date TIMESTAMP NOT NULL,
         hash_cvv TEXT NOT NULL,
         updated_at TIMESTAMP,
         meta JSONB,
