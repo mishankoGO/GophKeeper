@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+import "registration.proto";
+import "google/protobuf/timestamp.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+message Card {
+  string name = 1;
+  string card_number = 2;
+  string card_holder = 3;
+  google.protobuf.Timestamp expiry_date = 4;
+  string hash_cvv = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  bytes meta = 7;
+}
+
+service Cards {
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+  rpc Delete(DeleteRequest) returns (DeleteRequest);
+}
+
+message GetRequest {
+  User user = 1;
+  string name = 2;
+}
+
+message GetResponse {
+  Card card = 1;
+  string error = 2;
+}
+
+message UpdateRequest {
+  User user = 1;
+  string name = 2;
+  Card card = 3;
+}
+
+message UpdateResponse {
+  Card card = 1;
+  string error = 2;
+}
+
+message DeleteRequest {
+  User user = 1;
+  string name = 2;
+}
+
+message DeleteResponse {
+  bool ok = 1;
+  string error = 2;
+}

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "registration.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+service Users {
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message LoginRequest {
+  Credential cred = 1;
+}
+
+message LoginResponse {
+  User user = 1;
+  string error = 2;
+}

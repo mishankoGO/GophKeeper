@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "registration.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+message BinaryFile {
+  string name = 1;
+  string hash_file = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  bytes meta = 4;
+}
+
+service BinaryFiles {
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+  rpc Delete(DeleteRequest) returns (DeleteRequest);
+}
+
+
+message GetRequest {
+  User user = 1;
+  string name = 2;
+}
+
+message GetResponse {
+  BinaryFile file = 1;
+  string error = 2;
+}
+
+message UpdateRequest {
+  User user = 1;
+  string name = 2;
+  BinaryFile file = 3;
+}
+
+message UpdateResponse {
+  BinaryFile file = 1;
+  string error = 2;
+}
+
+message DeleteRequest {
+  User user = 1;
+  string name = 2;
+}
+
+message DeleteResponse {
+  bool ok = 1;
+  string error = 2;
+}

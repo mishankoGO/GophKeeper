@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	pb "github.com/mishankoGO/GophKeeper/api"
+	pb "github.com/mishankoGO/GophKeeper/internal/grpc/registration"
 	db "github.com/mishankoGO/GophKeeper/internal/repository/postgres"
 	"github.com/mishankoGO/GophKeeper/internal/server"
 	"log"
