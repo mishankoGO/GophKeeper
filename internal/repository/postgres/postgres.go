@@ -8,7 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	pb "github.com/mishankoGO/GophKeeper/api"
+	pb "github.com/mishankoGO/GophKeeper/internal/grpc/registration"
 	"github.com/mishankoGO/GophKeeper/internal/repository"
 	query "github.com/mishankoGO/GophKeeper/internal/repository/sql"
 	"google.golang.org/grpc/codes"
@@ -77,3 +77,6 @@ func (r *DBRepository) Register(credential *pb.Credential) (*pb.User, error) {
 	user := &pb.User{UserId: userID, CreatedAt: timestamppb.New(time.Now())}
 	return user, nil
 }
+
+
+func
