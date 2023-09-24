@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS credentials (
 
 CREATE TABLE IF NOT EXISTS users (
         user_id UUID,
+        login VARCHAR(50),
         created_at TIMESTAMP,
         PRIMARY KEY(user_id),
         CONSTRAINT fk_credential

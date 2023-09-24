@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	BinaryFiles_Insert_FullMethodName = "/api.BinaryFiles/Insert"
 	BinaryFiles_Get_FullMethodName    = "/api.BinaryFiles/Get"
 	BinaryFiles_Update_FullMethodName = "/api.BinaryFiles/Update"
 	BinaryFiles_Delete_FullMethodName = "/api.BinaryFiles/Delete"
@@ -28,9 +29,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BinaryFilesClient interface {
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
-	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteRequest, error)
+	Insert(ctx context.Context, in *InsertBinaryFileRequest, opts ...grpc.CallOption) (*InsertResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetBinaryFileResponse, error)
+	Update(ctx context.Context, in *UpdateBinaryFileRequest, opts ...grpc.CallOption) (*UpdateBinaryFileResponse, error)
+	Delete(ctx context.Context, in *DeleteBinaryFileRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 }
 
 type binaryFilesClient struct {
@@ -41,8 +43,17 @@ func NewBinaryFilesClient(cc grpc.ClientConnInterface) BinaryFilesClient {
 	return &binaryFilesClient{cc}
 }
 
-func (c *binaryFilesClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
+func (c *binaryFilesClient) Insert(ctx context.Context, in *InsertBinaryFileRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
+	out := new(InsertResponse)
+	err := c.cc.Invoke(ctx, BinaryFiles_Insert_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *binaryFilesClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetBinaryFileResponse, error) {
+	out := new(GetBinaryFileResponse)
 	err := c.cc.Invoke(ctx, BinaryFiles_Get_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -50,8 +61,8 @@ func (c *binaryFilesClient) Get(ctx context.Context, in *GetRequest, opts ...grp
 	return out, nil
 }
 
-func (c *binaryFilesClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
-	out := new(UpdateResponse)
+func (c *binaryFilesClient) Update(ctx context.Context, in *UpdateBinaryFileRequest, opts ...grpc.CallOption) (*UpdateBinaryFileResponse, error) {
+	out := new(UpdateBinaryFileResponse)
 	err := c.cc.Invoke(ctx, BinaryFiles_Update_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -59,8 +70,8 @@ func (c *binaryFilesClient) Update(ctx context.Context, in *UpdateRequest, opts 
 	return out, nil
 }
 
-func (c *binaryFilesClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteRequest, error) {
-	out := new(DeleteRequest)
+func (c *binaryFilesClient) Delete(ctx context.Context, in *DeleteBinaryFileRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, BinaryFiles_Delete_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +83,10 @@ func (c *binaryFilesClient) Delete(ctx context.Context, in *DeleteRequest, opts 
 // All implementations must embed UnimplementedBinaryFilesServer
 // for forward compatibility
 type BinaryFilesServer interface {
-	Get(context.Context, *GetRequest) (*GetResponse, error)
-	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
-	Delete(context.Context, *DeleteRequest) (*DeleteRequest, error)
+	Insert(context.Context, *InsertBinaryFileRequest) (*InsertResponse, error)
+	Get(context.Context, *GetRequest) (*GetBinaryFileResponse, error)
+	Update(context.Context, *UpdateBinaryFileRequest) (*UpdateBinaryFileResponse, error)
+	Delete(context.Context, *DeleteBinaryFileRequest) (*DeleteResponse, error)
 	mustEmbedUnimplementedBinaryFilesServer()
 }
 
@@ -82,13 +94,16 @@ type BinaryFilesServer interface {
 type UnimplementedBinaryFilesServer struct {
 }
 
-func (UnimplementedBinaryFilesServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
+func (UnimplementedBinaryFilesServer) Insert(context.Context, *InsertBinaryFileRequest) (*InsertResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
+}
+func (UnimplementedBinaryFilesServer) Get(context.Context, *GetRequest) (*GetBinaryFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedBinaryFilesServer) Update(context.Context, *UpdateRequest) (*UpdateResponse, error) {
+func (UnimplementedBinaryFilesServer) Update(context.Context, *UpdateBinaryFileRequest) (*UpdateBinaryFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedBinaryFilesServer) Delete(context.Context, *DeleteRequest) (*DeleteRequest, error) {
+func (UnimplementedBinaryFilesServer) Delete(context.Context, *DeleteBinaryFileRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedBinaryFilesServer) mustEmbedUnimplementedBinaryFilesServer() {}
@@ -102,6 +117,24 @@ type UnsafeBinaryFilesServer interface {
 
 func RegisterBinaryFilesServer(s grpc.ServiceRegistrar, srv BinaryFilesServer) {
 	s.RegisterService(&BinaryFiles_ServiceDesc, srv)
+}
+
+func _BinaryFiles_Insert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InsertBinaryFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BinaryFilesServer).Insert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BinaryFiles_Insert_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BinaryFilesServer).Insert(ctx, req.(*InsertBinaryFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _BinaryFiles_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -123,7 +156,7 @@ func _BinaryFiles_Get_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _BinaryFiles_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRequest)
+	in := new(UpdateBinaryFileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -135,13 +168,13 @@ func _BinaryFiles_Update_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: BinaryFiles_Update_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BinaryFilesServer).Update(ctx, req.(*UpdateRequest))
+		return srv.(BinaryFilesServer).Update(ctx, req.(*UpdateBinaryFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _BinaryFiles_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRequest)
+	in := new(DeleteBinaryFileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -153,7 +186,7 @@ func _BinaryFiles_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: BinaryFiles_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BinaryFilesServer).Delete(ctx, req.(*DeleteRequest))
+		return srv.(BinaryFilesServer).Delete(ctx, req.(*DeleteBinaryFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -165,6 +198,10 @@ var BinaryFiles_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.BinaryFiles",
 	HandlerType: (*BinaryFilesServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Insert",
+			Handler:    _BinaryFiles_Insert_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _BinaryFiles_Get_Handler,

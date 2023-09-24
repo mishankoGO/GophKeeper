@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	Texts_Insert_FullMethodName = "/api.Texts/Insert"
 	Texts_Get_FullMethodName    = "/api.Texts/Get"
 	Texts_Update_FullMethodName = "/api.Texts/Update"
 	Texts_Delete_FullMethodName = "/api.Texts/Delete"
@@ -28,9 +29,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TextsClient interface {
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
-	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteRequest, error)
+	Insert(ctx context.Context, in *InsertTextRequest, opts ...grpc.CallOption) (*InsertResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetTextResponse, error)
+	Update(ctx context.Context, in *UpdateTextRequest, opts ...grpc.CallOption) (*UpdateTextResponse, error)
+	Delete(ctx context.Context, in *DeleteTextRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 }
 
 type textsClient struct {
@@ -41,8 +43,17 @@ func NewTextsClient(cc grpc.ClientConnInterface) TextsClient {
 	return &textsClient{cc}
 }
 
-func (c *textsClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
+func (c *textsClient) Insert(ctx context.Context, in *InsertTextRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
+	out := new(InsertResponse)
+	err := c.cc.Invoke(ctx, Texts_Insert_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *textsClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetTextResponse, error) {
+	out := new(GetTextResponse)
 	err := c.cc.Invoke(ctx, Texts_Get_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -50,8 +61,8 @@ func (c *textsClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *textsClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
-	out := new(UpdateResponse)
+func (c *textsClient) Update(ctx context.Context, in *UpdateTextRequest, opts ...grpc.CallOption) (*UpdateTextResponse, error) {
+	out := new(UpdateTextResponse)
 	err := c.cc.Invoke(ctx, Texts_Update_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -59,8 +70,8 @@ func (c *textsClient) Update(ctx context.Context, in *UpdateRequest, opts ...grp
 	return out, nil
 }
 
-func (c *textsClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteRequest, error) {
-	out := new(DeleteRequest)
+func (c *textsClient) Delete(ctx context.Context, in *DeleteTextRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, Texts_Delete_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +83,10 @@ func (c *textsClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grp
 // All implementations must embed UnimplementedTextsServer
 // for forward compatibility
 type TextsServer interface {
-	Get(context.Context, *GetRequest) (*GetResponse, error)
-	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
-	Delete(context.Context, *DeleteRequest) (*DeleteRequest, error)
+	Insert(context.Context, *InsertTextRequest) (*InsertResponse, error)
+	Get(context.Context, *GetRequest) (*GetTextResponse, error)
+	Update(context.Context, *UpdateTextRequest) (*UpdateTextResponse, error)
+	Delete(context.Context, *DeleteTextRequest) (*DeleteResponse, error)
 	mustEmbedUnimplementedTextsServer()
 }
 
@@ -82,13 +94,16 @@ type TextsServer interface {
 type UnimplementedTextsServer struct {
 }
 
-func (UnimplementedTextsServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
+func (UnimplementedTextsServer) Insert(context.Context, *InsertTextRequest) (*InsertResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
+}
+func (UnimplementedTextsServer) Get(context.Context, *GetRequest) (*GetTextResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedTextsServer) Update(context.Context, *UpdateRequest) (*UpdateResponse, error) {
+func (UnimplementedTextsServer) Update(context.Context, *UpdateTextRequest) (*UpdateTextResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedTextsServer) Delete(context.Context, *DeleteRequest) (*DeleteRequest, error) {
+func (UnimplementedTextsServer) Delete(context.Context, *DeleteTextRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedTextsServer) mustEmbedUnimplementedTextsServer() {}
@@ -102,6 +117,24 @@ type UnsafeTextsServer interface {
 
 func RegisterTextsServer(s grpc.ServiceRegistrar, srv TextsServer) {
 	s.RegisterService(&Texts_ServiceDesc, srv)
+}
+
+func _Texts_Insert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InsertTextRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TextsServer).Insert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Texts_Insert_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TextsServer).Insert(ctx, req.(*InsertTextRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Texts_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -123,7 +156,7 @@ func _Texts_Get_Handler(srv interface{}, ctx context.Context, dec func(interface
 }
 
 func _Texts_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRequest)
+	in := new(UpdateTextRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -135,13 +168,13 @@ func _Texts_Update_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: Texts_Update_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TextsServer).Update(ctx, req.(*UpdateRequest))
+		return srv.(TextsServer).Update(ctx, req.(*UpdateTextRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Texts_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRequest)
+	in := new(DeleteTextRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -153,7 +186,7 @@ func _Texts_Delete_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: Texts_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TextsServer).Delete(ctx, req.(*DeleteRequest))
+		return srv.(TextsServer).Delete(ctx, req.(*DeleteTextRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -165,6 +198,10 @@ var Texts_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.Texts",
 	HandlerType: (*TextsServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Insert",
+			Handler:    _Texts_Insert_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _Texts_Get_Handler,

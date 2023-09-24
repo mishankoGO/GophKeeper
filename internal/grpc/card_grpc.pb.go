@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	Cards_Insert_FullMethodName = "/api.Cards/Insert"
 	Cards_Get_FullMethodName    = "/api.Cards/Get"
 	Cards_Update_FullMethodName = "/api.Cards/Update"
 	Cards_Delete_FullMethodName = "/api.Cards/Delete"
@@ -28,9 +29,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CardsClient interface {
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
-	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteRequest, error)
+	Insert(ctx context.Context, in *InsertCardRequest, opts ...grpc.CallOption) (*InsertResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetCardResponse, error)
+	Update(ctx context.Context, in *UpdateCardRequest, opts ...grpc.CallOption) (*UpdateCardResponse, error)
+	Delete(ctx context.Context, in *DeleteCardRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 }
 
 type cardsClient struct {
@@ -41,8 +43,17 @@ func NewCardsClient(cc grpc.ClientConnInterface) CardsClient {
 	return &cardsClient{cc}
 }
 
-func (c *cardsClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
+func (c *cardsClient) Insert(ctx context.Context, in *InsertCardRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
+	out := new(InsertResponse)
+	err := c.cc.Invoke(ctx, Cards_Insert_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cardsClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetCardResponse, error) {
+	out := new(GetCardResponse)
 	err := c.cc.Invoke(ctx, Cards_Get_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -50,8 +61,8 @@ func (c *cardsClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *cardsClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
-	out := new(UpdateResponse)
+func (c *cardsClient) Update(ctx context.Context, in *UpdateCardRequest, opts ...grpc.CallOption) (*UpdateCardResponse, error) {
+	out := new(UpdateCardResponse)
 	err := c.cc.Invoke(ctx, Cards_Update_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -59,8 +70,8 @@ func (c *cardsClient) Update(ctx context.Context, in *UpdateRequest, opts ...grp
 	return out, nil
 }
 
-func (c *cardsClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteRequest, error) {
-	out := new(DeleteRequest)
+func (c *cardsClient) Delete(ctx context.Context, in *DeleteCardRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, Cards_Delete_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +83,10 @@ func (c *cardsClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grp
 // All implementations must embed UnimplementedCardsServer
 // for forward compatibility
 type CardsServer interface {
-	Get(context.Context, *GetRequest) (*GetResponse, error)
-	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
-	Delete(context.Context, *DeleteRequest) (*DeleteRequest, error)
+	Insert(context.Context, *InsertCardRequest) (*InsertResponse, error)
+	Get(context.Context, *GetRequest) (*GetCardResponse, error)
+	Update(context.Context, *UpdateCardRequest) (*UpdateCardResponse, error)
+	Delete(context.Context, *DeleteCardRequest) (*DeleteResponse, error)
 	mustEmbedUnimplementedCardsServer()
 }
 
@@ -82,13 +94,16 @@ type CardsServer interface {
 type UnimplementedCardsServer struct {
 }
 
-func (UnimplementedCardsServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
+func (UnimplementedCardsServer) Insert(context.Context, *InsertCardRequest) (*InsertResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
+}
+func (UnimplementedCardsServer) Get(context.Context, *GetRequest) (*GetCardResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedCardsServer) Update(context.Context, *UpdateRequest) (*UpdateResponse, error) {
+func (UnimplementedCardsServer) Update(context.Context, *UpdateCardRequest) (*UpdateCardResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedCardsServer) Delete(context.Context, *DeleteRequest) (*DeleteRequest, error) {
+func (UnimplementedCardsServer) Delete(context.Context, *DeleteCardRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedCardsServer) mustEmbedUnimplementedCardsServer() {}
@@ -102,6 +117,24 @@ type UnsafeCardsServer interface {
 
 func RegisterCardsServer(s grpc.ServiceRegistrar, srv CardsServer) {
 	s.RegisterService(&Cards_ServiceDesc, srv)
+}
+
+func _Cards_Insert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InsertCardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardsServer).Insert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cards_Insert_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardsServer).Insert(ctx, req.(*InsertCardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Cards_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -123,7 +156,7 @@ func _Cards_Get_Handler(srv interface{}, ctx context.Context, dec func(interface
 }
 
 func _Cards_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRequest)
+	in := new(UpdateCardRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -135,13 +168,13 @@ func _Cards_Update_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: Cards_Update_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardsServer).Update(ctx, req.(*UpdateRequest))
+		return srv.(CardsServer).Update(ctx, req.(*UpdateCardRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Cards_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRequest)
+	in := new(DeleteCardRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -153,7 +186,7 @@ func _Cards_Delete_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: Cards_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CardsServer).Delete(ctx, req.(*DeleteRequest))
+		return srv.(CardsServer).Delete(ctx, req.(*DeleteCardRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -165,6 +198,10 @@ var Cards_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.Cards",
 	HandlerType: (*CardsServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Insert",
+			Handler:    _Cards_Insert_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _Cards_Get_Handler,

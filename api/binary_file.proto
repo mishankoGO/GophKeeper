@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 import "registration.proto";
+import "log_pass.proto";
 
 package api;
 
@@ -15,39 +16,31 @@ message BinaryFile {
 }
 
 service BinaryFiles {
-  rpc Get(GetRequest) returns (GetResponse);
-  rpc Update(UpdateRequest) returns (UpdateResponse);
-  rpc Delete(DeleteRequest) returns (DeleteRequest);
+  rpc Insert(InsertBinaryFileRequest) returns (InsertResponse);
+  rpc Get(GetRequest) returns (GetBinaryFileResponse);
+  rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse);
+  rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse);
 }
 
-
-message GetRequest {
-  User user = 1;
-  string name = 2;
-}
-
-message GetResponse {
+message InsertBinaryFileRequest {
   BinaryFile file = 1;
-  string error = 2;
 }
 
-message UpdateRequest {
+message GetBinaryFileResponse {
+  BinaryFile file = 1;
+}
+
+message UpdateBinaryFileRequest {
   User user = 1;
   string name = 2;
   BinaryFile file = 3;
 }
 
-message UpdateResponse {
+message UpdateBinaryFileResponse {
   BinaryFile file = 1;
-  string error = 2;
 }
 
-message DeleteRequest {
+message DeleteBinaryFileRequest {
   User user = 1;
   string name = 2;
-}
-
-message DeleteResponse {
-  bool ok = 1;
-  string error = 2;
 }

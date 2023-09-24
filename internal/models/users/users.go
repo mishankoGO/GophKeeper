@@ -2,7 +2,8 @@ package users
 
 import "time"
 
-type Users struct {
+type User struct {
 	UserID    string
+	Login     string
 	CreatedAt time.Time
 }

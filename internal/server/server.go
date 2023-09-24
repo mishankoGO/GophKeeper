@@ -1,26 +1,15 @@
 package server
 
 import (
+	"context"
 	// импортируем пакет со сгенерированными protobuf-файлами
-	pb "github.com/mishankoGO/GophKeeper/api"
-	"github.com/mishankoGO/GophKeeper/internal/grpc/registration"
-	"github.com/mishankoGO/GophKeeper/internal/repository"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 )
 
-// Credentials struct realizes CredentialServer interface.
-type Credentials struct {
-	// нужно встраивать тип pb.Unimplemented<TypeName>
-	// для совместимости с будущими версиями
-	pb.UnimplementedCredentialsServer
-	Repo repository.Repository
+type Server interface {
+	Credentials
 }
 
-func (c *Credentials) Register(credential *api.Credential) (*api.User, error) {
-	u, err := c.Repo.Register(credential)
-	if err != nil {
-		return u, status.Error(codes.Internal, "error registering user")
-	}
-	return u, nil
+type Credentials interface {
+	Register(ctx context.Context, pbcred *pb.RegisterRequest) (*pb.User, error)
 }

@@ -1,6 +1,6 @@
 package users
 
-type Credentials struct {
+type Credential struct {
 	Login        string
 	HashPassword string
 }

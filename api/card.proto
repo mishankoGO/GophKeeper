@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "registration.proto";
 import "google/protobuf/timestamp.proto";
+import "log_pass.proto";
 
 package api;
 
@@ -18,38 +19,33 @@ message Card {
 }
 
 service Cards {
-  rpc Get(GetRequest) returns (GetResponse);
-  rpc Update(UpdateRequest) returns (UpdateResponse);
-  rpc Delete(DeleteRequest) returns (DeleteRequest);
+  rpc Insert(InsertCardRequest) returns (InsertResponse);
+  rpc Get(GetRequest) returns (GetCardResponse);
+  rpc Update(UpdateCardRequest) returns (UpdateCardResponse);
+  rpc Delete(DeleteCardRequest) returns (DeleteResponse);
 }
 
-message GetRequest {
-  User user = 1;
-  string name = 2;
+message InsertCardRequest {
+  Card card = 1;
 }
 
-message GetResponse {
+message GetCardResponse {
   Card card = 1;
   string error = 2;
 }
 
-message UpdateRequest {
+message UpdateCardRequest {
   User user = 1;
   string name = 2;
   Card card = 3;
 }
 
-message UpdateResponse {
+message UpdateCardResponse {
   Card card = 1;
   string error = 2;
 }
 
-message DeleteRequest {
+message DeleteCardRequest {
   User user = 1;
   string name = 2;
-}
-
-message DeleteResponse {
-  bool ok = 1;
-  string error = 2;
 }

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "registration.proto";
 import "google/protobuf/timestamp.proto";
+import "log_pass.proto";
 
 package api;
 
@@ -15,38 +16,33 @@ message Text {
 }
 
 service Texts {
-  rpc Get(GetRequest) returns (GetResponse);
-  rpc Update(UpdateRequest) returns (UpdateResponse);
-  rpc Delete(DeleteRequest) returns (DeleteRequest);
+  rpc Insert(InsertTextRequest) returns (InsertResponse);
+  rpc Get(GetRequest) returns (GetTextResponse);
+  rpc Update(UpdateTextRequest) returns (UpdateTextResponse);
+  rpc Delete(DeleteTextRequest) returns (DeleteResponse);
 }
 
-message GetRequest {
-  User user = 1;
-  string name = 2;
+message InsertTextRequest {
+  Text text = 1;
 }
 
-message GetResponse {
+message GetTextResponse {
   Text text = 1;
   string error = 2;
 }
 
-message UpdateRequest {
+message UpdateTextRequest {
   User user = 1;
   string name = 2;
   Text text = 3;
 }
 
-message UpdateResponse {
+message UpdateTextResponse {
   Text text = 1;
   string error = 2;
 }
 
-message DeleteRequest {
+message DeleteTextRequest {
   User user = 1;
   string name = 2;
-}
-
-message DeleteResponse {
-  bool ok = 1;
-  string error = 2;
 }
