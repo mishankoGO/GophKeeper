@@ -134,18 +134,43 @@ func (r *DBRepository) InsertUser(ctx context.Context, u *users.User) error {
 }
 
 func (r *DBRepository) InsertBF(ctx context.Context, bf *binary_files.Files) error {
+	// insert binary file
+	_, err := r.DB.ExecContext(ctx, query.InsertBinaryFile, bf.UserID, bf.Name, bf.HashFile, bf.UpdatedAt, bf.Meta)
+	if err != nil {
+		return status.Errorf(codes.Internal, "error inserting new binary file: %v", err)
+	}
 	return nil
 }
 
-func (r *DBRepository) GetBF(ctx context.Context, name string) (*binary_files.Files, error) {
-	return nil, nil
+func (r *DBRepository) GetBF(ctx context.Context, userID, name string) (*binary_files.Files, error) {
+	// get binary file by name
+	var uid, n, hashFile string
+	var updatedAt time.Time
+	var meta = make(map[string]string)
+
+	err := r.DB.QueryRowContext(ctx, query.GetBinaryFile, userID, name).Scan(&uid, &n, &hashFile, &updatedAt, &meta)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting binary file %s: %v", n, err)
+	}
+
+	var bf = &binary_files.Files{UserID: uid, Name: n, HashFile: hashFile, UpdatedAt: updatedAt, Meta: meta}
+	return bf, nil
 }
 
 func (r *DBRepository) UpdateBF(ctx context.Context, bf *binary_files.Files) (*binary_files.Files, error) {
-	return nil, nil
+	_, err := r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.HashFile, bf.UpdatedAt, bf.Meta)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error updating binary file: %v", err)
+	}
+
+	return bf, nil
 }
 
-func (r *DBRepository) DeleteBF(ctx context.Context, name string) error {
+func (r *DBRepository) DeleteBF(ctx context.Context, userID, name string) error {
+	_, err := r.DB.ExecContext(ctx, query.DeleteBinaryFile, userID, name)
+	if err != nil {
+		return status.Errorf(codes.Internal, "error deleting binary file %s: %v", name, err)
+	}
 	return nil
 }
 

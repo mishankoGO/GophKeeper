@@ -18,9 +18,9 @@ type Repository interface {
 
 type BinaryFilesStorage interface {
 	InsertBF(ctx context.Context, bf *binary_files.Files) error
-	GetBF(ctx context.Context, name string) (*binary_files.Files, error)
+	GetBF(ctx context.Context, userID, name string) (*binary_files.Files, error)
 	UpdateBF(ctx context.Context, bf *binary_files.Files) (*binary_files.Files, error)
-	DeleteBF(ctx context.Context, name string) error
+	DeleteBF(ctx context.Context, userID, name string) error
 }
 
 type LogPassesStorage interface {

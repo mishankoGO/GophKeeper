@@ -23,7 +23,8 @@ service BinaryFiles {
 }
 
 message InsertBinaryFileRequest {
-  BinaryFile file = 1;
+  User user = 1;
+  BinaryFile file = 2;
 }
 
 message GetBinaryFileResponse {
@@ -32,8 +33,7 @@ message GetBinaryFileResponse {
 
 message UpdateBinaryFileRequest {
   User user = 1;
-  string name = 2;
-  BinaryFile file = 3;
+  BinaryFile file = 2;
 }
 
 message UpdateBinaryFileResponse {
