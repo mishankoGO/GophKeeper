@@ -1,22 +1,30 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/pki/sender"
 	"github.com/mishankoGO/GophKeeper/internal/repository"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+//func NewBinaryFiles(repository.Repository) (*BinaryFiles, error) {
+//
+//}
 
 type BinaryFiles struct {
 	pb.UnimplementedBinaryFilesServer
 	Repo repository.Repository
 }
 
-func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileRequest) (*pb.InsertBinaryFileResponse, error) {
+func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileRequest) (*pb.InsertResponse, error) {
 	binaryFile, err := converters.PBBinaryFileToBinaryFile(req.User.UserId, req.File)
-	res := &pb.InsertBinaryFileResponse{IsInserted: false}
+	res := &pb.InsertResponse{IsInserted: false}
 	if err != nil {
 		return res, status.Errorf(codes.Internal, "error converting binary file: %v", err)
 	}
@@ -70,6 +78,7 @@ func (bf *BinaryFiles) Update(ctx context.Context, req *pb.UpdateBinaryFileReque
 
 	return res, nil
 }
+
 func (bf *BinaryFiles) Delete(ctx context.Context, req *pb.DeleteBinaryFileRequest) (*pb.DeleteResponse, error) {
 	user := converters.PBUserToUser(req.GetUser())
 	name := req.GetName()
@@ -83,4 +92,22 @@ func (bf *BinaryFiles) Delete(ctx context.Context, req *pb.DeleteBinaryFileReque
 
 	res.Ok = true
 	return res, nil
+}
+
+// encryptMessage is a helper function to encrypt incoming data with cryptoKey.
+func encryptMessage(cryptoKey string, buf bytes.Buffer, encoder json.Encoder) error {
+	// if crypto key is present, send encrypted message
+	if cryptoKey != "" {
+		encMetric, err := sender.Encrypt(cryptoKey, buf.Bytes())
+		if err != nil {
+			return fmt.Errorf("failed encrypting metric: %w", err)
+		}
+		buf.Reset()
+
+		err = encoder.Encode(encMetric)
+		if err != nil {
+			return fmt.Errorf("failed encoding encrypted metric: %w", err)
+		}
+	}
+	return nil
 }

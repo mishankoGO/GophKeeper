@@ -16,9 +16,9 @@ func PBBinaryFileToBinaryFile(uid string, pbf *pb.BinaryFile) (*binary_files.Fil
 		if err != nil {
 			return nil, status.Error(codes.Internal, "error unmarshalling binary file meta")
 		}
-		return &binary_files.Files{UserID: uid, Name: pbf.Name, HashFile: pbf.HashFile, UpdatedAt: pbf.UpdatedAt.AsTime(), Meta: meta}, nil
+		return &binary_files.Files{UserID: uid, Name: pbf.Name, File: pbf.File, UpdatedAt: pbf.UpdatedAt.AsTime(), Meta: meta}, nil
 	}
-	return &binary_files.Files{UserID: uid, Name: pbf.Name, HashFile: pbf.HashFile, UpdatedAt: pbf.UpdatedAt.AsTime()}, nil
+	return &binary_files.Files{UserID: uid, Name: pbf.Name, File: pbf.File, UpdatedAt: pbf.UpdatedAt.AsTime()}, nil
 }
 
 func BinaryFileToPBBinaryFile(bf *binary_files.Files) (*pb.BinaryFile, error) {
@@ -27,7 +27,7 @@ func BinaryFileToPBBinaryFile(bf *binary_files.Files) (*pb.BinaryFile, error) {
 		if err != nil {
 			return nil, status.Error(codes.Internal, "error marshalling binary file meta")
 		}
-		return &pb.BinaryFile{Name: bf.Name, HashFile: bf.HashFile, UpdatedAt: timestamppb.New(bf.UpdatedAt), Meta: meta}, nil
+		return &pb.BinaryFile{Name: bf.Name, File: bf.File, UpdatedAt: timestamppb.New(bf.UpdatedAt), Meta: meta}, nil
 	}
-	return &pb.BinaryFile{Name: bf.Name, HashFile: bf.HashFile, UpdatedAt: timestamppb.New(bf.UpdatedAt)}, nil
+	return &pb.BinaryFile{Name: bf.Name, File: bf.File, UpdatedAt: timestamppb.New(bf.UpdatedAt)}, nil
 }

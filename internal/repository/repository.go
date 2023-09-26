@@ -15,6 +15,8 @@ type Repository interface {
 	UsersStorage
 	BinaryFilesStorage
 	CardsStorage
+	LogPassesStorage
+	TextsStorage
 }
 
 type BinaryFilesStorage interface {
@@ -40,9 +42,9 @@ type CardsStorage interface {
 
 type TextsStorage interface {
 	InsertT(ctx context.Context, t *texts.Texts) error
-	GetT(ctx context.Context, name string) (*texts.Texts, error)
+	GetT(ctx context.Context, userID, name string) (*texts.Texts, error)
 	UpdateT(ctx context.Context, t *texts.Texts) (*texts.Texts, error)
-	DeleteT(ctx context.Context, name string) error
+	DeleteT(ctx context.Context, userID, name string) error
 }
 
 type UsersStorage interface {

@@ -71,7 +71,7 @@ func NewDBRepository(conf *config.Config) (repository.Repository, error) {
 func (r *DBRepository) Register(ctx context.Context, credential *users.Credential) (user *users.User, err error) {
 
 	// get login and password from input
-	login, hashPassword := credential.Login, credential.HashPassword
+	login, Password := credential.Login, credential.Password
 
 	// check if user exists
 	_, err = r.DB.ExecContext(ctx, query.CheckUser, login)
@@ -80,7 +80,7 @@ func (r *DBRepository) Register(ctx context.Context, credential *users.Credentia
 	}
 
 	// insert new credential in db
-	_, err = r.DB.ExecContext(ctx, query.RegisterQuery, login, hashPassword)
+	_, err = r.DB.ExecContext(ctx, query.RegisterQuery, login, Password)
 	if err != nil {
 		return user, status.Errorf(codes.Internal, "error inserting new credential: %v", err)
 	}
@@ -107,9 +107,9 @@ func (r *DBRepository) Register(ctx context.Context, credential *users.Credentia
 // Login method is responsible for retrieving userID from database.
 func (r *DBRepository) Login(ctx context.Context, login string) (*users.Credential, *users.User, error) {
 
-	var userID, hashPassword string
+	var userID, Password string
 	var createdAt time.Time
-	err := r.DB.QueryRowContext(ctx, query.LoginUser, login).Scan(&userID, &hashPassword, &createdAt)
+	err := r.DB.QueryRowContext(ctx, query.LoginUser, login).Scan(&userID, &Password, &createdAt)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil, status.Errorf(codes.InvalidArgument, "no user with login %s", login)
@@ -117,7 +117,7 @@ func (r *DBRepository) Login(ctx context.Context, login string) (*users.Credenti
 		return nil, nil, status.Error(codes.Internal, "error getting user id")
 	}
 
-	var cred = &users.Credential{Login: login, HashPassword: hashPassword}
+	var cred = &users.Credential{Login: login, Password: Password}
 	var user = &users.User{UserID: userID, Login: login, CreatedAt: createdAt}
 
 	return cred, user, nil
@@ -136,7 +136,7 @@ func (r *DBRepository) InsertUser(ctx context.Context, u *users.User) error {
 
 func (r *DBRepository) InsertBF(ctx context.Context, bf *binary_files.Files) error {
 	// insert binary file
-	_, err := r.DB.ExecContext(ctx, query.InsertBinaryFile, bf.UserID, bf.Name, bf.HashFile, bf.UpdatedAt, bf.Meta)
+	_, err := r.DB.ExecContext(ctx, query.InsertBinaryFile, bf.UserID, bf.Name, bf.File, bf.UpdatedAt, bf.Meta)
 	if err != nil {
 		return status.Errorf(codes.Internal, "error inserting new binary file: %v", err)
 	}
@@ -145,11 +145,11 @@ func (r *DBRepository) InsertBF(ctx context.Context, bf *binary_files.Files) err
 
 func (r *DBRepository) GetBF(ctx context.Context, userID, name string) (*binary_files.Files, error) {
 	// get binary file by name
-	var uid, n, hashFile string
+	var uid, n string
 	var updatedAt time.Time
-	var meta []byte
+	var meta, file []byte
 
-	err := r.DB.QueryRowContext(ctx, query.GetBinaryFile, userID, name).Scan(&uid, &n, &hashFile, &updatedAt, &meta)
+	err := r.DB.QueryRowContext(ctx, query.GetBinaryFile, userID, name).Scan(&uid, &n, &file, &updatedAt, &meta)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting binary file %s: %v", n, err)
 	}
@@ -160,7 +160,7 @@ func (r *DBRepository) GetBF(ctx context.Context, userID, name string) (*binary_
 		return nil, status.Errorf(codes.Internal, "error unmarshalling meta information: %v", err)
 	}
 
-	var bf = &binary_files.Files{UserID: uid, Name: n, HashFile: hashFile, UpdatedAt: updatedAt, Meta: metaMap}
+	var bf = &binary_files.Files{UserID: uid, Name: n, File: file, UpdatedAt: updatedAt, Meta: metaMap}
 	return bf, nil
 }
 
@@ -170,12 +170,12 @@ func (r *DBRepository) UpdateBF(ctx context.Context, bf *binary_files.Files) (*b
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error marshalling meta map: %v", err)
 		}
-		_, err = r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.HashFile, bf.UpdatedAt, metaByte)
+		_, err = r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.File, bf.UpdatedAt, metaByte)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error updating binary file: %v", err)
 		}
 	}
-	_, err := r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.HashFile, bf.UpdatedAt, bf.Meta)
+	_, err := r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.File, bf.UpdatedAt, bf.Meta)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error updating binary file: %v", err)
 	}
@@ -193,7 +193,7 @@ func (r *DBRepository) DeleteBF(ctx context.Context, userID, name string) error 
 
 func (r *DBRepository) InsertLP(ctx context.Context, lp *log_passes.LogPasses) error {
 	// insert log pass
-	_, err := r.DB.ExecContext(ctx, query.InsertLogPass, lp.UserID, lp.Name, lp.HashLogin, lp.HashPassword, lp.UpdatedAt, lp.Meta)
+	_, err := r.DB.ExecContext(ctx, query.InsertLogPass, lp.UserID, lp.Name, lp.Login, lp.Password, lp.UpdatedAt, lp.Meta)
 	if err != nil {
 		return status.Errorf(codes.Internal, "error inserting new log pass: %v", err)
 	}
@@ -202,11 +202,11 @@ func (r *DBRepository) InsertLP(ctx context.Context, lp *log_passes.LogPasses) e
 
 func (r *DBRepository) GetLP(ctx context.Context, userID, name string) (*log_passes.LogPasses, error) {
 	// get log pass by name
-	var uid, n, hashLogin, hashPassword string
+	var uid, n string
 	var updatedAt time.Time
-	var meta []byte
+	var meta, login, password []byte
 
-	err := r.DB.QueryRowContext(ctx, query.GetLogPass, userID, name).Scan(&uid, &n, &hashLogin, &hashPassword, &updatedAt, &meta)
+	err := r.DB.QueryRowContext(ctx, query.GetLogPass, userID, name).Scan(&uid, &n, &login, &password, &updatedAt, &meta)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting log pass %s: %v", n, err)
 	}
@@ -217,7 +217,7 @@ func (r *DBRepository) GetLP(ctx context.Context, userID, name string) (*log_pas
 		return nil, status.Errorf(codes.Internal, "error unmarshalling meta information: %v", err)
 	}
 
-	var lp = &log_passes.LogPasses{UserID: uid, Name: n, HashLogin: hashLogin, HashPassword: hashPassword, UpdatedAt: updatedAt, Meta: metaMap}
+	var lp = &log_passes.LogPasses{UserID: uid, Name: n, Login: login, Password: password, UpdatedAt: updatedAt, Meta: metaMap}
 	return lp, nil
 }
 
@@ -227,12 +227,12 @@ func (r *DBRepository) UpdateLP(ctx context.Context, lp *log_passes.LogPasses) (
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error marshalling meta map: %v", err)
 		}
-		_, err = r.DB.ExecContext(ctx, query.UpdateLogPass, lp.UserID, lp.Name, lp.HashLogin, lp.HashPassword, lp.UpdatedAt, metaByte)
+		_, err = r.DB.ExecContext(ctx, query.UpdateLogPass, lp.UserID, lp.Name, lp.Login, lp.Password, lp.UpdatedAt, metaByte)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error updating log pass: %v", err)
 		}
 	}
-	_, err := r.DB.ExecContext(ctx, query.UpdateLogPass, lp.UserID, lp.Name, lp.HashLogin, lp.HashPassword, lp.UpdatedAt, lp.Meta)
+	_, err := r.DB.ExecContext(ctx, query.UpdateLogPass, lp.UserID, lp.Name, lp.Login, lp.Password, lp.UpdatedAt, lp.Meta)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error updating log pass: %v", err)
 	}
@@ -250,7 +250,7 @@ func (r *DBRepository) DeleteLP(ctx context.Context, userID, name string) error 
 
 func (r *DBRepository) InsertC(ctx context.Context, c *cards.Cards) error {
 	// insert card
-	_, err := r.DB.ExecContext(ctx, query.InsertCard, c.UserID, c.Name, c.HashCardNumber, c.HashCardHolder, c.ExpiryDate, c.HashCVV, c.UpdatedAt, c.Meta)
+	_, err := r.DB.ExecContext(ctx, query.InsertCard, c.UserID, c.Name, c.Card, c.UpdatedAt, c.Meta)
 	if err != nil {
 		return status.Errorf(codes.Internal, "error inserting new card: %v", err)
 	}
@@ -259,11 +259,11 @@ func (r *DBRepository) InsertC(ctx context.Context, c *cards.Cards) error {
 
 func (r *DBRepository) GetC(ctx context.Context, userID, name string) (*cards.Cards, error) {
 	// get card by name
-	var uid, n, hashNumber, hashCardHolder, hashCVV string
-	var updatedAt, expiryDate time.Time
-	var meta []byte
+	var uid, n string
+	var updatedAt time.Time
+	var meta, card []byte
 
-	err := r.DB.QueryRowContext(ctx, query.GetCard, userID, name).Scan(&uid, &n, &hashNumber, &hashCardHolder, &expiryDate, &hashCVV, &updatedAt, &meta)
+	err := r.DB.QueryRowContext(ctx, query.GetCard, userID, name).Scan(&uid, &n, &card, &updatedAt, &meta)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting card %s: %v", n, err)
 	}
@@ -274,7 +274,7 @@ func (r *DBRepository) GetC(ctx context.Context, userID, name string) (*cards.Ca
 		return nil, status.Errorf(codes.Internal, "error unmarshalling meta information: %v", err)
 	}
 
-	var c = &cards.Cards{UserID: uid, Name: n, HashCardNumber: hashNumber, HashCardHolder: hashCardHolder, ExpiryDate: expiryDate, UpdatedAt: updatedAt, Meta: metaMap}
+	var c = &cards.Cards{UserID: uid, Name: n, Card: card, UpdatedAt: updatedAt, Meta: metaMap}
 	return c, nil
 }
 
@@ -284,12 +284,12 @@ func (r *DBRepository) UpdateC(ctx context.Context, c *cards.Cards) (*cards.Card
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error marshalling meta map: %v", err)
 		}
-		_, err = r.DB.ExecContext(ctx, query.UpdateCard, c.UserID, c.Name, c.HashCardNumber, c.HashCardHolder, c.ExpiryDate, c.HashCVV, c.UpdatedAt, metaByte)
+		_, err = r.DB.ExecContext(ctx, query.UpdateCard, c.UserID, c.Name, c.Card, c.UpdatedAt, metaByte)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error updating binary file: %v", err)
+			return nil, status.Errorf(codes.Internal, "error updating card: %v", err)
 		}
 	}
-	_, err := r.DB.ExecContext(ctx, query.UpdateCard, c.UserID, c.Name, c.HashCardNumber, c.HashCardHolder, c.ExpiryDate, c.HashCVV, c.UpdatedAt, c.Meta)
+	_, err := r.DB.ExecContext(ctx, query.UpdateCard, c.UserID, c.Name, c.Card, c.UpdatedAt, c.Meta)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error updating card: %v", err)
 	}
@@ -306,17 +306,58 @@ func (r *DBRepository) DeleteC(ctx context.Context, userID, name string) error {
 }
 
 func (r *DBRepository) InsertT(ctx context.Context, t *texts.Texts) error {
+	// insert text
+	_, err := r.DB.ExecContext(ctx, query.InsertText, t.UserID, t.Name, t.Text, t.UpdatedAt, t.Meta)
+	if err != nil {
+		return status.Errorf(codes.Internal, "error inserting new text: %v", err)
+	}
 	return nil
 }
 
 func (r *DBRepository) GetT(ctx context.Context, userID, name string) (*texts.Texts, error) {
-	return nil, nil
+	// get card by name
+	var uid, n string
+	var updatedAt time.Time
+	var meta, text []byte
+
+	err := r.DB.QueryRowContext(ctx, query.GetText, userID, name).Scan(&uid, &n, &text, &updatedAt, &meta)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting text %s: %v", n, err)
+	}
+
+	var metaMap = make(map[string]string)
+	err = json.Unmarshal(meta, &metaMap)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error unmarshalling meta information: %v", err)
+	}
+
+	var t = &texts.Texts{UserID: uid, Name: n, Text: text, UpdatedAt: updatedAt, Meta: metaMap}
+	return t, nil
 }
 
 func (r *DBRepository) UpdateT(ctx context.Context, t *texts.Texts) (*texts.Texts, error) {
-	return nil, nil
+	if t.Meta != nil {
+		metaByte, err := json.Marshal(t.Meta)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error marshalling meta map: %v", err)
+		}
+		_, err = r.DB.ExecContext(ctx, query.UpdateText, t.UserID, t.Name, t.Text, t.UpdatedAt, metaByte)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error updating text: %v", err)
+		}
+	}
+	_, err := r.DB.ExecContext(ctx, query.UpdateText, t.UserID, t.Name, t.Text, t.UpdatedAt, t.Meta)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error updating text: %v", err)
+	}
+
+	return t, nil
 }
 
 func (r *DBRepository) DeleteT(ctx context.Context, userID, name string) error {
+	_, err := r.DB.ExecContext(ctx, query.DeleteText, userID, name)
+	if err != nil {
+		return status.Errorf(codes.Internal, "error deleting text %s: %v", name, err)
+	}
 	return nil
 }

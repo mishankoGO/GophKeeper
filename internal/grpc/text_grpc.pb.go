@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TextsClient interface {
-	Insert(ctx context.Context, in *InsertTextRequest, opts ...grpc.CallOption) (*InsertTextResponse, error)
+	Insert(ctx context.Context, in *InsertTextRequest, opts ...grpc.CallOption) (*InsertResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetTextResponse, error)
 	Update(ctx context.Context, in *UpdateTextRequest, opts ...grpc.CallOption) (*UpdateTextResponse, error)
 	Delete(ctx context.Context, in *DeleteTextRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -43,8 +43,8 @@ func NewTextsClient(cc grpc.ClientConnInterface) TextsClient {
 	return &textsClient{cc}
 }
 
-func (c *textsClient) Insert(ctx context.Context, in *InsertTextRequest, opts ...grpc.CallOption) (*InsertTextResponse, error) {
-	out := new(InsertTextResponse)
+func (c *textsClient) Insert(ctx context.Context, in *InsertTextRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
+	out := new(InsertResponse)
 	err := c.cc.Invoke(ctx, Texts_Insert_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *textsClient) Delete(ctx context.Context, in *DeleteTextRequest, opts ..
 // All implementations must embed UnimplementedTextsServer
 // for forward compatibility
 type TextsServer interface {
-	Insert(context.Context, *InsertTextRequest) (*InsertTextResponse, error)
+	Insert(context.Context, *InsertTextRequest) (*InsertResponse, error)
 	Get(context.Context, *GetRequest) (*GetTextResponse, error)
 	Update(context.Context, *UpdateTextRequest) (*UpdateTextResponse, error)
 	Delete(context.Context, *DeleteTextRequest) (*DeleteResponse, error)
@@ -94,7 +94,7 @@ type TextsServer interface {
 type UnimplementedTextsServer struct {
 }
 
-func (UnimplementedTextsServer) Insert(context.Context, *InsertTextRequest) (*InsertTextResponse, error) {
+func (UnimplementedTextsServer) Insert(context.Context, *InsertTextRequest) (*InsertResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
 }
 func (UnimplementedTextsServer) Get(context.Context, *GetRequest) (*GetTextResponse, error) {

@@ -10,13 +10,13 @@ option go_package = "github.com/mishankoGO/GophKeeper/api";
 
 message Text {
   string name = 1;
-  string hash_text = 2;
+  bytes text = 2;
   google.protobuf.Timestamp updated_at = 3;
   bytes meta = 4;
 }
 
 service Texts {
-  rpc Insert(InsertTextRequest) returns (InsertTextResponse);
+  rpc Insert(InsertTextRequest) returns (InsertResponse);
   rpc Get(GetRequest) returns (GetTextResponse);
   rpc Update(UpdateTextRequest) returns (UpdateTextResponse);
   rpc Delete(DeleteTextRequest) returns (DeleteResponse);
@@ -25,10 +25,6 @@ service Texts {
 message InsertTextRequest {
   User user = 1;
   Text text = 2;
-}
-
-message InsertTextResponse {
-  Text text = 1;
 }
 
 message GetTextResponse {

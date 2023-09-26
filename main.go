@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/mishankoGO/GophKeeper/config"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/pki/generator"
 	db "github.com/mishankoGO/GophKeeper/internal/repository/postgres"
 	"github.com/mishankoGO/GophKeeper/internal/server/handlers"
 	"google.golang.org/grpc/codes"
@@ -170,4 +171,56 @@ func main() {
 	//}
 	//
 	//fmt.Println(resppplp)
+
+	t := &pb.Text{Name: "test_name",
+		HashText:  "test_text",
+		UpdatedAt: timestamppb.New(time.Now()),
+		Meta:      b}
+	ts := handlers.Texts{Repo: repo}
+
+	rest, err := ts.Insert(ctx, &pb.InsertTextRequest{
+		User: user.User,
+		Text: t,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(rest)
+
+	respt, err := ts.Get(ctx, &pb.GetRequest{User: user.User, Name: c.Name})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(respt)
+
+	newT := &pb.Text{
+		Name:      "test_name",
+		HashText:  "New text",
+		UpdatedAt: timestamppb.New(time.Now()),
+		Meta:      b}
+	resppt, err := ts.Update(ctx, &pb.UpdateTextRequest{User: user.User, Text: newT})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(resppt)
+
+	//respppt, err := ts.Delete(ctx, &pb.DeleteTextRequest{User: user.User, Name: "test_name"})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//fmt.Println(respppt)
+
+	key, err := generator.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = key.SaveKeys()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

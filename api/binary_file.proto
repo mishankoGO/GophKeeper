@@ -10,13 +10,13 @@ option go_package = "github.com/mishankoGO/GophKeeper/api";
 
 message BinaryFile {
   string name = 1;
-  string hash_file = 2;
+  bytes file = 2;
   google.protobuf.Timestamp updated_at = 3;
   bytes meta = 4;
 }
 
 service BinaryFiles {
-  rpc Insert(InsertBinaryFileRequest) returns (InsertBinaryFileResponse);
+  rpc Insert(InsertBinaryFileRequest) returns (InsertResponse);
   rpc Get(GetRequest) returns (GetBinaryFileResponse);
   rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse);
   rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse);
@@ -25,10 +25,6 @@ service BinaryFiles {
 message InsertBinaryFileRequest {
   User user = 1;
   BinaryFile file = 2;
-}
-
-message InsertBinaryFileResponse {
-  LogPass log_pass = 1;
 }
 
 message GetBinaryFileResponse {

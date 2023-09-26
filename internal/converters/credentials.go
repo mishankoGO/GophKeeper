@@ -6,9 +6,9 @@ import (
 )
 
 func CredentialToPBCredential(c *users.Credential) *pb.Credential {
-	return &pb.Credential{Login: c.Login, HashPassword: c.HashPassword}
+	return &pb.Credential{Login: c.Login, Password: c.Password}
 }
 
 func PBCredentialToCredential(pbc *pb.Credential) *users.Credential {
-	return &users.Credential{Login: pbc.Login, HashPassword: pbc.HashPassword}
+	return &users.Credential{Login: pbc.Login, Password: pbc.Password}
 }

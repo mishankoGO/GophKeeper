@@ -10,16 +10,13 @@ option go_package = "github.com/mishankoGO/GophKeeper/api";
 
 message Card {
   string name = 1;
-  string card_number = 2;
-  string card_holder = 3;
-  google.protobuf.Timestamp expiry_date = 4;
-  string hash_cvv = 5;
-  google.protobuf.Timestamp updated_at = 6;
-  bytes meta = 7;
+  bytes card = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  bytes meta = 4;
 }
 
 service Cards {
-  rpc Insert(InsertCardRequest) returns (InsertCardResponse);
+  rpc Insert(InsertCardRequest) returns (InsertResponse);
   rpc Get(GetRequest) returns (GetCardResponse);
   rpc Update(UpdateCardRequest) returns (UpdateCardResponse);
   rpc Delete(DeleteCardRequest) returns (DeleteResponse);
@@ -28,10 +25,6 @@ service Cards {
 message InsertCardRequest {
   User user = 1;
   Card card = 2;
-}
-
-message InsertCardResponse {
-  Card card = 1;
 }
 
 message GetCardResponse {

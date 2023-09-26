@@ -17,19 +17,19 @@ func PBLogPassToLogPass(uid string, pblp *pb.LogPass) (*log_passes.LogPasses, er
 			return nil, status.Error(codes.Internal, "error unmarshalling log pass meta")
 		}
 		return &log_passes.LogPasses{
-			UserID:       uid,
-			Name:         pblp.GetName(),
-			HashLogin:    pblp.GetLogin(),
-			HashPassword: pblp.GetPass(),
-			UpdatedAt:    pblp.GetUpdatedAt().AsTime(),
-			Meta:         meta}, nil
+			UserID:    uid,
+			Name:      pblp.GetName(),
+			Login:     pblp.GetLogin(),
+			Password:  pblp.GetPass(),
+			UpdatedAt: pblp.GetUpdatedAt().AsTime(),
+			Meta:      meta}, nil
 	}
 	return &log_passes.LogPasses{
-		UserID:       uid,
-		Name:         pblp.GetName(),
-		HashLogin:    pblp.GetLogin(),
-		HashPassword: pblp.GetPass(),
-		UpdatedAt:    pblp.GetUpdatedAt().AsTime(),
+		UserID:    uid,
+		Name:      pblp.GetName(),
+		Login:     pblp.GetLogin(),
+		Password:  pblp.GetPass(),
+		UpdatedAt: pblp.GetUpdatedAt().AsTime(),
 	}, nil
 }
 
@@ -41,15 +41,15 @@ func LogPassToPBLogPass(lp *log_passes.LogPasses) (*pb.LogPass, error) {
 		}
 		return &pb.LogPass{
 			Name:      lp.Name,
-			Login:     lp.HashLogin,
-			Pass:      lp.HashPassword,
+			Login:     lp.Login,
+			Pass:      lp.Password,
 			UpdatedAt: timestamppb.New(lp.UpdatedAt),
 			Meta:      meta}, nil
 	}
 	return &pb.LogPass{
 		Name:      lp.Name,
-		Login:     lp.HashLogin,
-		Pass:      lp.HashPassword,
+		Login:     lp.Login,
+		Pass:      lp.Password,
 		UpdatedAt: timestamppb.New(lp.UpdatedAt),
 	}, nil
 }

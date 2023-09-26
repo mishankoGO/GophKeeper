@@ -17,23 +17,17 @@ func PBCardToCard(uid string, pbc *pb.Card) (*cards.Cards, error) {
 			return nil, status.Error(codes.Internal, "error unmarshalling card meta")
 		}
 		return &cards.Cards{
-			UserID:         uid,
-			Name:           pbc.GetName(),
-			HashCardNumber: pbc.GetCardNumber(),
-			HashCardHolder: pbc.GetCardHolder(),
-			UpdatedAt:      pbc.GetUpdatedAt().AsTime(),
-			HashCVV:        pbc.GetHashCvv(),
-			ExpiryDate:     pbc.GetExpiryDate().AsTime(),
-			Meta:           meta}, nil
+			UserID:    uid,
+			Name:      pbc.GetName(),
+			Card:      pbc.GetCard(),
+			UpdatedAt: pbc.GetUpdatedAt().AsTime(),
+			Meta:      meta}, nil
 	}
 	return &cards.Cards{
-		UserID:         uid,
-		Name:           pbc.GetName(),
-		HashCardNumber: pbc.GetCardNumber(),
-		HashCardHolder: pbc.GetCardHolder(),
-		UpdatedAt:      pbc.GetUpdatedAt().AsTime(),
-		HashCVV:        pbc.GetHashCvv(),
-		ExpiryDate:     pbc.GetExpiryDate().AsTime(),
+		UserID:    uid,
+		Name:      pbc.GetName(),
+		Card:      pbc.GetCard(),
+		UpdatedAt: pbc.GetUpdatedAt().AsTime(),
 	}, nil
 }
 
@@ -44,20 +38,14 @@ func CardToPBCard(c *cards.Cards) (*pb.Card, error) {
 			return nil, status.Error(codes.Internal, "error marshalling card meta")
 		}
 		return &pb.Card{
-			Name:       c.Name,
-			CardNumber: c.HashCardNumber,
-			CardHolder: c.HashCardHolder,
-			ExpiryDate: timestamppb.New(c.ExpiryDate),
-			HashCvv:    c.HashCVV,
-			UpdatedAt:  timestamppb.New(c.UpdatedAt),
-			Meta:       meta}, nil
+			Name:      c.Name,
+			Card:      c.Card,
+			UpdatedAt: timestamppb.New(c.UpdatedAt),
+			Meta:      meta}, nil
 	}
 	return &pb.Card{
-		Name:       c.Name,
-		CardNumber: c.HashCardNumber,
-		CardHolder: c.HashCardHolder,
-		ExpiryDate: timestamppb.New(c.ExpiryDate),
-		HashCvv:    c.HashCVV,
-		UpdatedAt:  timestamppb.New(c.UpdatedAt),
+		Name:      c.Name,
+		Card:      c.Card,
+		UpdatedAt: timestamppb.New(c.UpdatedAt),
 	}, nil
 }

@@ -8,7 +8,7 @@ option go_package = "github.com/mishankoGO/GophKeeper/api";
 
 message Credential {
   string login = 1;
-  string hash_password = 2;
+  string password = 2;
 }
 
 message User {
