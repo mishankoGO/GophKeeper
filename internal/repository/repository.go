@@ -14,6 +14,7 @@ import (
 type Repository interface {
 	UsersStorage
 	BinaryFilesStorage
+	CardsStorage
 }
 
 type BinaryFilesStorage interface {
@@ -25,16 +26,16 @@ type BinaryFilesStorage interface {
 
 type LogPassesStorage interface {
 	InsertLP(ctx context.Context, lp *log_passes.LogPasses) error
-	GetLP(ctx context.Context, name string) (*log_passes.LogPasses, error)
+	GetLP(ctx context.Context, userID, name string) (*log_passes.LogPasses, error)
 	UpdateLP(ctx context.Context, lp *log_passes.LogPasses) (*log_passes.LogPasses, error)
-	DeleteLP(ctx context.Context, name string) error
+	DeleteLP(ctx context.Context, userID, name string) error
 }
 
 type CardsStorage interface {
 	InsertC(ctx context.Context, c *cards.Cards) error
-	GetC(ctx context.Context, name string) (*cards.Cards, error)
+	GetC(ctx context.Context, userID, name string) (*cards.Cards, error)
 	UpdateC(ctx context.Context, c *cards.Cards) (*cards.Cards, error)
-	DeleteC(ctx context.Context, name string) error
+	DeleteC(ctx context.Context, userID, name string) error
 }
 
 type TextsStorage interface {

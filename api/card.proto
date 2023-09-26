@@ -19,13 +19,18 @@ message Card {
 }
 
 service Cards {
-  rpc Insert(InsertCardRequest) returns (InsertResponse);
+  rpc Insert(InsertCardRequest) returns (InsertCardResponse);
   rpc Get(GetRequest) returns (GetCardResponse);
   rpc Update(UpdateCardRequest) returns (UpdateCardResponse);
   rpc Delete(DeleteCardRequest) returns (DeleteResponse);
 }
 
 message InsertCardRequest {
+  User user = 1;
+  Card card = 2;
+}
+
+message InsertCardResponse {
   Card card = 1;
 }
 

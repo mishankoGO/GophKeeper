@@ -16,18 +16,19 @@ message LogPass {
 }
 
 service LogPasses {
-  rpc Insert(InsertLogPassRequest) returns (InsertResponse);
+  rpc Insert(InsertLogPassRequest) returns (InsertLogPassResponse);
   rpc Get(GetRequest) returns (GetLogPassResponse);
   rpc Update(UpdateLogPassRequest) returns (UpdateLogPassResponse);
   rpc Delete(DeleteLogPassRequest) returns (DeleteResponse);
 }
 
 message InsertLogPassRequest {
-  LogPass log_pass = 1;
+  User user = 1;
+  LogPass log_pass = 2;
 }
 
-message InsertResponse {
-  bool isInserted = 1;
+message InsertLogPassResponse {
+  LogPass log_pass = 1;
 }
 
 message GetRequest {

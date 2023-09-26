@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BinaryFilesClient interface {
-	Insert(ctx context.Context, in *InsertBinaryFileRequest, opts ...grpc.CallOption) (*InsertResponse, error)
+	Insert(ctx context.Context, in *InsertBinaryFileRequest, opts ...grpc.CallOption) (*InsertBinaryFileResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetBinaryFileResponse, error)
 	Update(ctx context.Context, in *UpdateBinaryFileRequest, opts ...grpc.CallOption) (*UpdateBinaryFileResponse, error)
 	Delete(ctx context.Context, in *DeleteBinaryFileRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -43,8 +43,8 @@ func NewBinaryFilesClient(cc grpc.ClientConnInterface) BinaryFilesClient {
 	return &binaryFilesClient{cc}
 }
 
-func (c *binaryFilesClient) Insert(ctx context.Context, in *InsertBinaryFileRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
-	out := new(InsertResponse)
+func (c *binaryFilesClient) Insert(ctx context.Context, in *InsertBinaryFileRequest, opts ...grpc.CallOption) (*InsertBinaryFileResponse, error) {
+	out := new(InsertBinaryFileResponse)
 	err := c.cc.Invoke(ctx, BinaryFiles_Insert_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *binaryFilesClient) Delete(ctx context.Context, in *DeleteBinaryFileRequ
 // All implementations must embed UnimplementedBinaryFilesServer
 // for forward compatibility
 type BinaryFilesServer interface {
-	Insert(context.Context, *InsertBinaryFileRequest) (*InsertResponse, error)
+	Insert(context.Context, *InsertBinaryFileRequest) (*InsertBinaryFileResponse, error)
 	Get(context.Context, *GetRequest) (*GetBinaryFileResponse, error)
 	Update(context.Context, *UpdateBinaryFileRequest) (*UpdateBinaryFileResponse, error)
 	Delete(context.Context, *DeleteBinaryFileRequest) (*DeleteResponse, error)
@@ -94,7 +94,7 @@ type BinaryFilesServer interface {
 type UnimplementedBinaryFilesServer struct {
 }
 
-func (UnimplementedBinaryFilesServer) Insert(context.Context, *InsertBinaryFileRequest) (*InsertResponse, error) {
+func (UnimplementedBinaryFilesServer) Insert(context.Context, *InsertBinaryFileRequest) (*InsertBinaryFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
 }
 func (UnimplementedBinaryFilesServer) Get(context.Context, *GetRequest) (*GetBinaryFileResponse, error) {

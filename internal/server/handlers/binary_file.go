@@ -14,9 +14,9 @@ type BinaryFiles struct {
 	Repo repository.Repository
 }
 
-func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileRequest) (*pb.InsertResponse, error) {
+func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileRequest) (*pb.InsertBinaryFileResponse, error) {
 	binaryFile, err := converters.PBBinaryFileToBinaryFile(req.User.UserId, req.File)
-	res := &pb.InsertResponse{IsInserted: false}
+	res := &pb.InsertBinaryFileResponse{IsInserted: false}
 	if err != nil {
 		return res, status.Errorf(codes.Internal, "error converting binary file: %v", err)
 	}

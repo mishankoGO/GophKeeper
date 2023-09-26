@@ -16,7 +16,7 @@ message BinaryFile {
 }
 
 service BinaryFiles {
-  rpc Insert(InsertBinaryFileRequest) returns (InsertResponse);
+  rpc Insert(InsertBinaryFileRequest) returns (InsertBinaryFileResponse);
   rpc Get(GetRequest) returns (GetBinaryFileResponse);
   rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse);
   rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse);
@@ -25,6 +25,10 @@ service BinaryFiles {
 message InsertBinaryFileRequest {
   User user = 1;
   BinaryFile file = 2;
+}
+
+message InsertBinaryFileResponse {
+  LogPass log_pass = 1;
 }
 
 message GetBinaryFileResponse {

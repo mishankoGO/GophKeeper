@@ -16,13 +16,18 @@ message Text {
 }
 
 service Texts {
-  rpc Insert(InsertTextRequest) returns (InsertResponse);
+  rpc Insert(InsertTextRequest) returns (InsertTextResponse);
   rpc Get(GetRequest) returns (GetTextResponse);
   rpc Update(UpdateTextRequest) returns (UpdateTextResponse);
   rpc Delete(DeleteTextRequest) returns (DeleteResponse);
 }
 
 message InsertTextRequest {
+  User user = 1;
+  Text text = 2;
+}
+
+message InsertTextResponse {
   Text text = 1;
 }
 

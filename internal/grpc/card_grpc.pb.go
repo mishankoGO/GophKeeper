@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CardsClient interface {
-	Insert(ctx context.Context, in *InsertCardRequest, opts ...grpc.CallOption) (*InsertResponse, error)
+	Insert(ctx context.Context, in *InsertCardRequest, opts ...grpc.CallOption) (*InsertCardResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetCardResponse, error)
 	Update(ctx context.Context, in *UpdateCardRequest, opts ...grpc.CallOption) (*UpdateCardResponse, error)
 	Delete(ctx context.Context, in *DeleteCardRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -43,8 +43,8 @@ func NewCardsClient(cc grpc.ClientConnInterface) CardsClient {
 	return &cardsClient{cc}
 }
 
-func (c *cardsClient) Insert(ctx context.Context, in *InsertCardRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
-	out := new(InsertResponse)
+func (c *cardsClient) Insert(ctx context.Context, in *InsertCardRequest, opts ...grpc.CallOption) (*InsertCardResponse, error) {
+	out := new(InsertCardResponse)
 	err := c.cc.Invoke(ctx, Cards_Insert_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *cardsClient) Delete(ctx context.Context, in *DeleteCardRequest, opts ..
 // All implementations must embed UnimplementedCardsServer
 // for forward compatibility
 type CardsServer interface {
-	Insert(context.Context, *InsertCardRequest) (*InsertResponse, error)
+	Insert(context.Context, *InsertCardRequest) (*InsertCardResponse, error)
 	Get(context.Context, *GetRequest) (*GetCardResponse, error)
 	Update(context.Context, *UpdateCardRequest) (*UpdateCardResponse, error)
 	Delete(context.Context, *DeleteCardRequest) (*DeleteResponse, error)
@@ -94,7 +94,7 @@ type CardsServer interface {
 type UnimplementedCardsServer struct {
 }
 
-func (UnimplementedCardsServer) Insert(context.Context, *InsertCardRequest) (*InsertResponse, error) {
+func (UnimplementedCardsServer) Insert(context.Context, *InsertCardRequest) (*InsertCardResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
 }
 func (UnimplementedCardsServer) Get(context.Context, *GetRequest) (*GetCardResponse, error) {

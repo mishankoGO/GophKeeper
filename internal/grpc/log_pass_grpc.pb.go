@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LogPassesClient interface {
-	Insert(ctx context.Context, in *InsertLogPassRequest, opts ...grpc.CallOption) (*InsertResponse, error)
+	Insert(ctx context.Context, in *InsertLogPassRequest, opts ...grpc.CallOption) (*InsertLogPassResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetLogPassResponse, error)
 	Update(ctx context.Context, in *UpdateLogPassRequest, opts ...grpc.CallOption) (*UpdateLogPassResponse, error)
 	Delete(ctx context.Context, in *DeleteLogPassRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -43,8 +43,8 @@ func NewLogPassesClient(cc grpc.ClientConnInterface) LogPassesClient {
 	return &logPassesClient{cc}
 }
 
-func (c *logPassesClient) Insert(ctx context.Context, in *InsertLogPassRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
-	out := new(InsertResponse)
+func (c *logPassesClient) Insert(ctx context.Context, in *InsertLogPassRequest, opts ...grpc.CallOption) (*InsertLogPassResponse, error) {
+	out := new(InsertLogPassResponse)
 	err := c.cc.Invoke(ctx, LogPasses_Insert_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *logPassesClient) Delete(ctx context.Context, in *DeleteLogPassRequest, 
 // All implementations must embed UnimplementedLogPassesServer
 // for forward compatibility
 type LogPassesServer interface {
-	Insert(context.Context, *InsertLogPassRequest) (*InsertResponse, error)
+	Insert(context.Context, *InsertLogPassRequest) (*InsertLogPassResponse, error)
 	Get(context.Context, *GetRequest) (*GetLogPassResponse, error)
 	Update(context.Context, *UpdateLogPassRequest) (*UpdateLogPassResponse, error)
 	Delete(context.Context, *DeleteLogPassRequest) (*DeleteResponse, error)
@@ -94,7 +94,7 @@ type LogPassesServer interface {
 type UnimplementedLogPassesServer struct {
 }
 
-func (UnimplementedLogPassesServer) Insert(context.Context, *InsertLogPassRequest) (*InsertResponse, error) {
+func (UnimplementedLogPassesServer) Insert(context.Context, *InsertLogPassRequest) (*InsertLogPassResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
 }
 func (UnimplementedLogPassesServer) Get(context.Context, *GetRequest) (*GetLogPassResponse, error) {
