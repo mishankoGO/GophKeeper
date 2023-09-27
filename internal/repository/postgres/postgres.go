@@ -18,8 +18,8 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 	"github.com/mishankoGO/GophKeeper/internal/models/texts"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"github.com/mishankoGO/GophKeeper/internal/repository"
 	query "github.com/mishankoGO/GophKeeper/internal/repository/sql"
+	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log"
@@ -32,7 +32,7 @@ type DBRepository struct {
 }
 
 // NewDBRepository creates new repository instance.
-func NewDBRepository(conf *config.Config) (repository.Repository, error) {
+func NewDBRepository(conf *config.Config) (interfaces.Repository, error) {
 	//dataSourceName := "postgresql://gophkeeperuser:gophkeeperpwd@localhost:5432/gophkeeperdb?sslmode=disable"
 
 	// get db dsn from config

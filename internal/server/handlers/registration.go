@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
-	"github.com/mishankoGO/GophKeeper/internal/repository"
+	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"github.com/mishankoGO/GophKeeper/pkg/hash"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,16 +16,16 @@ type Credentials struct {
 	// нужно встраивать тип pb.Unimplemented<TypeName>
 	// для совместимости с будущими версиями
 	pb.UnimplementedCredentialsServer
-	Repo repository.Repository
+	Repo interfaces.Repository
 }
 
 func (c *Credentials) Register(ctx context.Context, req *pb.RegisterRequest) *pb.RegisterResponse {
 	// hash password
-	hashPass := hash.HashPass([]byte(req.Cred.HashPassword))
+	hashPass := hash.HashPass([]byte(req.Cred.Password))
 
 	// convert pb credential to model
 	cred := converters.PBCredentialToCredential(req.Cred)
-	cred.HashPassword = hashPass
+	cred.Password = hashPass
 
 	// register user
 	u, err := c.Repo.Register(ctx, cred)

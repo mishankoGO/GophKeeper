@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
-	"github.com/mishankoGO/GophKeeper/internal/repository"
+	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Cards struct {
 	pb.UnimplementedCardsServer
-	Repo repository.Repository
+	Repo interfaces.Repository
 }
 
 func (c *Cards) Insert(ctx context.Context, req *pb.InsertCardRequest) (*pb.InsertResponse, error) {

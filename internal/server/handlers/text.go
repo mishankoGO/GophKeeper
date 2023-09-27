@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
-	"github.com/mishankoGO/GophKeeper/internal/repository"
+	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Texts struct {
 	pb.UnimplementedTextsServer
-	Repo repository.Repository
+	Repo interfaces.Repository
 }
 
 func (t *Texts) Insert(ctx context.Context, req *pb.InsertTextRequest) (*pb.InsertResponse, error) {

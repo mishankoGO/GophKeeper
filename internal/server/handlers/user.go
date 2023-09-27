@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
-	"github.com/mishankoGO/GophKeeper/internal/repository"
+	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"github.com/mishankoGO/GophKeeper/pkg/hash"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,7 +13,7 @@ import (
 
 type Users struct {
 	pb.UnimplementedUsersServer
-	Repo repository.Repository
+	Repo interfaces.Repository
 }
 
 func (u *Users) Login(ctx context.Context, req *pb.LoginRequest) *pb.LoginResponse {
@@ -26,9 +26,9 @@ func (u *Users) Login(ctx context.Context, req *pb.LoginRequest) *pb.LoginRespon
 	}
 
 	// hash password
-	hashPass := hash.HashPass([]byte(pbcred.HashPassword))
+	hashPass := hash.HashPass([]byte(pbcred.Password))
 
-	if cred.HashPassword != hashPass {
+	if cred.Password != hashPass {
 		log.Println(status.Error(codes.PermissionDenied, "invalid credentials"))
 		return nil
 	}

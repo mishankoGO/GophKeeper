@@ -1,5 +1,4 @@
-// Package repository contains Repository interface to interact with database.
-package repository
+package interfaces
 
 import (
 	"context"
