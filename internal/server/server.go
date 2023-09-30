@@ -2,8 +2,10 @@ package server
 
 import (
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"github.com/mishankoGO/GophKeeper/config"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/interceptors"
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"github.com/mishankoGO/GophKeeper/internal/server/handlers"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
@@ -23,7 +25,11 @@ func NewServer(
 	security *security.Security,
 	config *config.Config) *Server {
 
-	grpcServer := grpc.NewServer()
+	interceptor := interceptors.NewAuthInterceptor(jwtManager)
+
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(selector.UnaryServerInterceptor(interceptor.Unary(), selector.MatchFunc(interceptors.LoginSkip))),
+	)
 
 	credServer := handlers.NewCredentials(repo)
 	pb.RegisterCredentialsServer(grpcServer, credServer)
