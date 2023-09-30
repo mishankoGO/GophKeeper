@@ -8,41 +8,48 @@ package api;
 
 option go_package = "github.com/mishankoGO/GophKeeper/api";
 
+// Card represents bank card instance.
 message Card {
-  string name = 1;
-  bytes card = 2;
-  google.protobuf.Timestamp updated_at = 3;
-  bytes meta = 4;
+  string name = 1; // card name
+  bytes card = 2; // bank card
+  google.protobuf.Timestamp updated_at = 3; // update or creation time
+  bytes meta = 4; // metadata
 }
 
+// Cards represents Cards server interface.
 service Cards {
-  rpc Insert(InsertCardRequest) returns (InsertResponse);
-  rpc Get(GetRequest) returns (GetCardResponse);
-  rpc Update(UpdateCardRequest) returns (UpdateCardResponse);
-  rpc Delete(DeleteCardRequest) returns (DeleteResponse);
+  rpc Insert(InsertCardRequest) returns (InsertResponse); // insert card to db
+  rpc Get(GetRequest) returns (GetCardResponse); // get card from db
+  rpc Update(UpdateCardRequest) returns (UpdateCardResponse); // update card
+  rpc Delete(DeleteCardRequest) returns (DeleteResponse); // delete card
 }
 
+// Insert request.
 message InsertCardRequest {
   User user = 1;
   Card card = 2;
 }
 
+// Get response.
 message GetCardResponse {
   Card card = 1;
   string error = 2;
 }
 
+// Update request.
 message UpdateCardRequest {
   User user = 1;
   string name = 2;
   Card card = 3;
 }
 
+// Update response.
 message UpdateCardResponse {
   Card card = 1;
   string error = 2;
 }
 
+// Delete request.
 message DeleteCardRequest {
   User user = 1;
   string name = 2;

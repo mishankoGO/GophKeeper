@@ -8,38 +8,45 @@ package api;
 
 option go_package = "github.com/mishankoGO/GophKeeper/api";
 
+// BinaryFile represents binary file instance.
 message BinaryFile {
-  string name = 1;
-  bytes file = 2;
-  google.protobuf.Timestamp updated_at = 3;
-  bytes meta = 4;
+  string name = 1; // binary file name
+  bytes file = 2; // binary file
+  google.protobuf.Timestamp updated_at = 3; // time of the update or creation
+  bytes meta = 4; // metadata
 }
 
+// BinaryFiles represents BinaryFiles server interface.
 service BinaryFiles {
-  rpc Insert(InsertBinaryFileRequest) returns (InsertResponse);
-  rpc Get(GetRequest) returns (GetBinaryFileResponse);
-  rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse);
-  rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse);
+  rpc Insert(InsertBinaryFileRequest) returns (InsertResponse); // inserts new binary file to db
+  rpc Get(GetRequest) returns (GetBinaryFileResponse); // retrieves binary file from db
+  rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse); // update binary file
+  rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse); // delete binary file
 }
 
+// Insert request.
 message InsertBinaryFileRequest {
   User user = 1;
   BinaryFile file = 2;
 }
 
+// Get response.
 message GetBinaryFileResponse {
   BinaryFile file = 1;
 }
 
+// Update request.
 message UpdateBinaryFileRequest {
   User user = 1;
   BinaryFile file = 2;
 }
 
+// Update response.
 message UpdateBinaryFileResponse {
   BinaryFile file = 1;
 }
 
+// Delete request.
 message DeleteBinaryFileRequest {
   User user = 1;
   string name = 2;

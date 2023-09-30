@@ -8,41 +8,48 @@ package api;
 
 option go_package = "github.com/mishankoGO/GophKeeper/api";
 
+// Text represents text instance.
 message Text {
-  string name = 1;
-  bytes text = 2;
-  google.protobuf.Timestamp updated_at = 3;
-  bytes meta = 4;
+  string name = 1; // text name
+  bytes text = 2; // text
+  google.protobuf.Timestamp updated_at = 3; // creation or update time
+  bytes meta = 4; // metadata
 }
 
+// Texts represents Text server interface.
 service Texts {
-  rpc Insert(InsertTextRequest) returns (InsertResponse);
-  rpc Get(GetRequest) returns (GetTextResponse);
-  rpc Update(UpdateTextRequest) returns (UpdateTextResponse);
-  rpc Delete(DeleteTextRequest) returns (DeleteResponse);
+  rpc Insert(InsertTextRequest) returns (InsertResponse); // insert text to db
+  rpc Get(GetRequest) returns (GetTextResponse); // get text from db
+  rpc Update(UpdateTextRequest) returns (UpdateTextResponse); // update text
+  rpc Delete(DeleteTextRequest) returns (DeleteResponse); // delete text
 }
 
+// Insert request.
 message InsertTextRequest {
   User user = 1;
   Text text = 2;
 }
 
+// Insert response.
 message GetTextResponse {
   Text text = 1;
   string error = 2;
 }
 
+// Update request.
 message UpdateTextRequest {
   User user = 1;
   string name = 2;
   Text text = 3;
 }
 
+// Update response.
 message UpdateTextResponse {
   Text text = 1;
   string error = 2;
 }
 
+// Delete request.
 message DeleteTextRequest {
   User user = 1;
   string name = 2;

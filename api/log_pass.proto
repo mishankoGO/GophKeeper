@@ -7,56 +7,66 @@ package api;
 
 option go_package = "github.com/mishankoGO/GophKeeper/api";
 
+// LogPass represents log pass instance.
 message LogPass {
-  string name = 1;
-  bytes login = 2;
-  bytes pass = 3;
-  google.protobuf.Timestamp updated_at = 4;
-  bytes meta = 5;
+  string name = 1; // log pass name
+  bytes login = 2; // user login
+  bytes pass = 3; // user pass
+  google.protobuf.Timestamp updated_at = 4; // creation or update time
+  bytes meta = 5; // metadata
 }
 
+// LogPasses represent LogPasses server interface.
 service LogPasses {
-  rpc Insert(InsertLogPassRequest) returns (InsertResponse);
-  rpc Get(GetRequest) returns (GetLogPassResponse);
-  rpc Update(UpdateLogPassRequest) returns (UpdateLogPassResponse);
-  rpc Delete(DeleteLogPassRequest) returns (DeleteResponse);
+  rpc Insert(InsertLogPassRequest) returns (InsertResponse); // insert log pass to db
+  rpc Get(GetRequest) returns (GetLogPassResponse); // get log pass from db
+  rpc Update(UpdateLogPassRequest) returns (UpdateLogPassResponse); // update log pass
+  rpc Delete(DeleteLogPassRequest) returns (DeleteResponse); // delete log pass
 }
 
+// Insert request.
 message InsertLogPassRequest {
   User user = 1;
   LogPass log_pass = 2;
 }
 
+// Insert response.
 message InsertResponse {
   bool is_inserted = 1;
 }
 
+// Get request.
 message GetRequest {
   User user = 1;
   string name = 2;
 }
 
+// Get response.
 message GetLogPassResponse {
   LogPass log_pass = 1;
   string error = 2;
 }
 
+// Update request.
 message UpdateLogPassRequest {
   User user = 1;
   string name = 2;
   LogPass log_pass = 3;
 }
 
+// Update response.
 message UpdateLogPassResponse {
   LogPass log_pass = 1;
   string error = 2;
 }
 
+// Delete request.
 message DeleteLogPassRequest {
   User user = 1;
   string name = 2;
 }
 
+// Delete response.
 message DeleteResponse {
   bool ok = 1;
 }
