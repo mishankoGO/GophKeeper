@@ -31,6 +31,9 @@ type BinaryFiles struct {
 func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileRequest) (*pb.InsertResponse, error) {
 	// convert proto binary file to model binary file
 	binaryFile, err := converters.PBBinaryFileToBinaryFile(req.User.UserId, req.File)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error converting proto binary file to model binary file: %v", err)
+	}
 
 	// get file
 	file := binaryFile.File
@@ -99,7 +102,7 @@ func (bf *BinaryFiles) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetBina
 
 // Update method encrypts new binary file and updates record in db.
 func (bf *BinaryFiles) Update(ctx context.Context, req *pb.UpdateBinaryFileRequest) (*pb.UpdateBinaryFileResponse, error) {
-	// convert proto user to model use
+	// convert proto user to model user
 	user := converters.PBUserToUser(req.GetUser())
 
 	// convert proto binary file to model binary file

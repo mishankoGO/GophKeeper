@@ -3,6 +3,7 @@ module github.com/mishankoGO/GophKeeper
 go 1.18
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/jackc/pgx/v5 v5.3.1
 	google.golang.org/grpc v1.58.1

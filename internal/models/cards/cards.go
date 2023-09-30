@@ -3,9 +3,9 @@ package cards
 import "time"
 
 type Cards struct {
-	UserID    string
-	Name      string
-	Card      []byte
-	UpdatedAt time.Time
-	Meta      map[string]string
+	UserID    string            `json:"user_id"`
+	Name      string            `json:"name"`
+	Card      []byte            `json:"card"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Meta      map[string]string `json:"meta"`
 }
