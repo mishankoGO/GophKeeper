@@ -1,3 +1,5 @@
+// Package interfaces contains all the necessary interfaces to work with database.
+// It has interfaces from binary files, cards, texts, users, credentials and logpasses.
 package interfaces
 
 import (
@@ -18,12 +20,15 @@ type Repository interface {
 	TextsStorage
 }
 
+// BinaryFilesStorage interface is responsible for storing, retrieving, updating and deleting binary files from database.
 type BinaryFilesStorage interface {
 	InsertBF(ctx context.Context, bf *binary_files.Files) error
 	GetBF(ctx context.Context, userID, name string) (*binary_files.Files, error)
 	UpdateBF(ctx context.Context, bf *binary_files.Files) (*binary_files.Files, error)
 	DeleteBF(ctx context.Context, userID, name string) error
 }
+
+// LogPassesStorage interface is responsible for storing, retrieving, updating and deleting logpasses from database.
 
 type LogPassesStorage interface {
 	InsertLP(ctx context.Context, lp *log_passes.LogPasses) error
@@ -32,6 +37,7 @@ type LogPassesStorage interface {
 	DeleteLP(ctx context.Context, userID, name string) error
 }
 
+// CardsStorage interface is responsible for storing, retrieving, updating and deleting cards from database.
 type CardsStorage interface {
 	InsertC(ctx context.Context, c *cards.Cards) error
 	GetC(ctx context.Context, userID, name string) (*cards.Cards, error)
@@ -39,6 +45,7 @@ type CardsStorage interface {
 	DeleteC(ctx context.Context, userID, name string) error
 }
 
+// TextsStorage interface is responsible for storing, retrieving, updating and deleting texts from database.
 type TextsStorage interface {
 	InsertT(ctx context.Context, t *texts.Texts) error
 	GetT(ctx context.Context, userID, name string) (*texts.Texts, error)
@@ -46,6 +53,7 @@ type TextsStorage interface {
 	DeleteT(ctx context.Context, userID, name string) error
 }
 
+// UsersStorage interface is responsible for registering, login and inserting user to database.
 type UsersStorage interface {
 	Register(ctx context.Context, credential *users.Credential) (*users.User, error)
 	Login(ctx context.Context, login string) (cred *users.Credential, user *users.User, err error)

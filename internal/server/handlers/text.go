@@ -1,17 +1,23 @@
+// Package handlers contains servers interfaces.
+// The list of servers:
+//     Users, Credentials, BinaryFiles, Cards, Texts, LogPasses
 package handlers
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
+// NewTexts creates new instance of text server.
 func NewTexts(repo interfaces.Repository, security *security.Security) *Texts {
 	return &Texts{
 		Repo:     repo,
@@ -19,12 +25,14 @@ func NewTexts(repo interfaces.Repository, security *security.Security) *Texts {
 	}
 }
 
+// Texts contains repository and security instances.
 type Texts struct {
 	pb.UnimplementedTextsServer
-	Repo     interfaces.Repository
-	Security security.Security
+	Repo     interfaces.Repository // repository
+	Security security.Security     // security
 }
 
+// Insert method inserts text to db.
 func (t *Texts) Insert(ctx context.Context, req *pb.InsertTextRequest) (*pb.InsertResponse, error) {
 	// convert proto text to model text
 	text, err := converters.PBTextToText(req.User.UserId, req.Text)
@@ -64,6 +72,7 @@ func (t *Texts) Insert(ctx context.Context, req *pb.InsertTextRequest) (*pb.Inse
 	return res, nil
 }
 
+// Get method retrieves text from db.
 func (t *Texts) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetTextResponse, error) {
 	// convert proto user to model user
 	user := converters.PBUserToUser(req.GetUser())
@@ -96,6 +105,7 @@ func (t *Texts) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetTextRespons
 	return res, nil
 }
 
+// Update method updates text in db.
 func (t *Texts) Update(ctx context.Context, req *pb.UpdateTextRequest) (*pb.UpdateTextResponse, error) {
 	// convert proto user to model user
 	user := converters.PBUserToUser(req.GetUser())
@@ -143,6 +153,7 @@ func (t *Texts) Update(ctx context.Context, req *pb.UpdateTextRequest) (*pb.Upda
 	return res, nil
 }
 
+// Delete method deletes text from db.
 func (t *Texts) Delete(ctx context.Context, req *pb.DeleteTextRequest) (*pb.DeleteResponse, error) {
 	// convert proto user to user and get name
 	user := converters.PBUserToUser(req.GetUser())

@@ -1,15 +1,20 @@
+// Package handlers contains servers interfaces.
+// The list of servers:
+//     Users, Credentials, BinaryFiles, Cards, Texts, LogPasses
 package handlers
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func NewLogPasses(repo interfaces.Repository, security *security.Security) *LogPasses {
