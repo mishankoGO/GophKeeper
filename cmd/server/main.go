@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	keyPhrase     = "secret"
-	secretKey     = "secret"
-	tokenDuration = 15 * time.Minute
+	keyPhrase     = "secret"         // key phrase from user
+	secretKey     = "secret"         // secret key for jwt
+	tokenDuration = 15 * time.Minute // duration of the token
 )
 
 func main() {

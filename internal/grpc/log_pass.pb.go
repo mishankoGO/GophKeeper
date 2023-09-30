@@ -21,16 +21,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// LogPass represents log pass instance.
 type LogPass struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Login     []byte                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`
-	Pass      []byte                 `protobuf:"bytes,3,opt,name=pass,proto3" json:"pass,omitempty"`
-	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Meta      []byte                 `protobuf:"bytes,5,opt,name=meta,proto3" json:"meta,omitempty"`
+	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                            // log pass name
+	Login     []byte                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                          // user login
+	Pass      []byte                 `protobuf:"bytes,3,opt,name=pass,proto3" json:"pass,omitempty"`                            // user pass
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // creation or update time
+	Meta      []byte                 `protobuf:"bytes,5,opt,name=meta,proto3" json:"meta,omitempty"`                            // metadata
 }
 
 func (x *LogPass) Reset() {
@@ -100,6 +101,7 @@ func (x *LogPass) GetMeta() []byte {
 	return nil
 }
 
+// Insert request.
 type InsertLogPassRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -155,6 +157,7 @@ func (x *InsertLogPassRequest) GetLogPass() *LogPass {
 	return nil
 }
 
+// Insert response.
 type InsertResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -202,6 +205,7 @@ func (x *InsertResponse) GetIsInserted() bool {
 	return false
 }
 
+// Get request.
 type GetRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -257,6 +261,7 @@ func (x *GetRequest) GetName() string {
 	return ""
 }
 
+// Get response.
 type GetLogPassResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -312,6 +317,7 @@ func (x *GetLogPassResponse) GetError() string {
 	return ""
 }
 
+// Update request.
 type UpdateLogPassRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -375,6 +381,7 @@ func (x *UpdateLogPassRequest) GetLogPass() *LogPass {
 	return nil
 }
 
+// Update response.
 type UpdateLogPassResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -430,6 +437,7 @@ func (x *UpdateLogPassResponse) GetError() string {
 	return ""
 }
 
+// Delete request.
 type DeleteLogPassRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -485,6 +493,7 @@ func (x *DeleteLogPassRequest) GetName() string {
 	return ""
 }
 
+// Delete response.
 type DeleteResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

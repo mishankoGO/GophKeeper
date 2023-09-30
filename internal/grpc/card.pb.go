@@ -21,15 +21,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Card represents bank card instance.
 type Card struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Card      []byte                 `protobuf:"bytes,2,opt,name=card,proto3" json:"card,omitempty"`
-	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Meta      []byte                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`
+	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                            // card name
+	Card      []byte                 `protobuf:"bytes,2,opt,name=card,proto3" json:"card,omitempty"`                            // bank card
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // update or creation time
+	Meta      []byte                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`                            // metadata
 }
 
 func (x *Card) Reset() {
@@ -92,6 +93,7 @@ func (x *Card) GetMeta() []byte {
 	return nil
 }
 
+// Insert request.
 type InsertCardRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -147,6 +149,7 @@ func (x *InsertCardRequest) GetCard() *Card {
 	return nil
 }
 
+// Get response.
 type GetCardResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -202,6 +205,7 @@ func (x *GetCardResponse) GetError() string {
 	return ""
 }
 
+// Update request.
 type UpdateCardRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -265,6 +269,7 @@ func (x *UpdateCardRequest) GetCard() *Card {
 	return nil
 }
 
+// Update response.
 type UpdateCardResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -320,6 +325,7 @@ func (x *UpdateCardResponse) GetError() string {
 	return ""
 }
 
+// Delete request.
 type DeleteCardRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

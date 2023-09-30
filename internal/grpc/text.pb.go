@@ -21,15 +21,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Text represents text instance.
 type Text struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Text      []byte                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
-	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Meta      []byte                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`
+	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                            // text name
+	Text      []byte                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`                            // text
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // creation or update time
+	Meta      []byte                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`                            // metadata
 }
 
 func (x *Text) Reset() {
@@ -92,6 +93,7 @@ func (x *Text) GetMeta() []byte {
 	return nil
 }
 
+// Insert request.
 type InsertTextRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -147,6 +149,7 @@ func (x *InsertTextRequest) GetText() *Text {
 	return nil
 }
 
+// Insert response.
 type GetTextResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -202,6 +205,7 @@ func (x *GetTextResponse) GetError() string {
 	return ""
 }
 
+// Update request.
 type UpdateTextRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -265,6 +269,7 @@ func (x *UpdateTextRequest) GetText() *Text {
 	return nil
 }
 
+// Update response.
 type UpdateTextResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -320,6 +325,7 @@ func (x *UpdateTextResponse) GetError() string {
 	return ""
 }
 
+// Delete request.
 type DeleteTextRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

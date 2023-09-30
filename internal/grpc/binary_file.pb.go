@@ -21,15 +21,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// BinaryFile represents binary file instance.
 type BinaryFile struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	File      []byte                 `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`
-	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Meta      []byte                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`
+	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                            // binary file name
+	File      []byte                 `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`                            // binary file
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // time of the update or creation
+	Meta      []byte                 `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`                            // metadata
 }
 
 func (x *BinaryFile) Reset() {
@@ -92,6 +93,7 @@ func (x *BinaryFile) GetMeta() []byte {
 	return nil
 }
 
+// Insert request.
 type InsertBinaryFileRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -147,6 +149,7 @@ func (x *InsertBinaryFileRequest) GetFile() *BinaryFile {
 	return nil
 }
 
+// Get response.
 type GetBinaryFileResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -194,6 +197,7 @@ func (x *GetBinaryFileResponse) GetFile() *BinaryFile {
 	return nil
 }
 
+// Update request.
 type UpdateBinaryFileRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -249,6 +253,7 @@ func (x *UpdateBinaryFileRequest) GetFile() *BinaryFile {
 	return nil
 }
 
+// Update response.
 type UpdateBinaryFileResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -296,6 +301,7 @@ func (x *UpdateBinaryFileResponse) GetFile() *BinaryFile {
 	return nil
 }
 
+// Delete request.
 type DeleteBinaryFileRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
