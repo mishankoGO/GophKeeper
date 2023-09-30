@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+message Credential {
+  string login = 1;
+  string password = 2;
+}
+
+message User {
+  string user_id = 1;
+  string login = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+service Credentials {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+}
+
+message RegisterRequest {
+  Credential cred = 1;
+}
+
+message RegisterResponse {
+  string error = 1;
+  User user = 2;
+}

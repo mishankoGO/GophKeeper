@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+import "registration.proto";
+import "google/protobuf/timestamp.proto";
+import "log_pass.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+message Text {
+  string name = 1;
+  bytes text = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  bytes meta = 4;
+}
+
+service Texts {
+  rpc Insert(InsertTextRequest) returns (InsertResponse);
+  rpc Get(GetRequest) returns (GetTextResponse);
+  rpc Update(UpdateTextRequest) returns (UpdateTextResponse);
+  rpc Delete(DeleteTextRequest) returns (DeleteResponse);
+}
+
+message InsertTextRequest {
+  User user = 1;
+  Text text = 2;
+}
+
+message GetTextResponse {
+  Text text = 1;
+  string error = 2;
+}
+
+message UpdateTextRequest {
+  User user = 1;
+  string name = 2;
+  Text text = 3;
+}
+
+message UpdateTextResponse {
+  Text text = 1;
+  string error = 2;
+}
+
+message DeleteTextRequest {
+  User user = 1;
+  string name = 2;
+}

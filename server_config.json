@@ -1,0 +1,6 @@
+{
+  "address": "127.0.0.1:8080",
+  "key": "pass",
+  "crypto_key": "private.key",
+  "database_dsn": "postgresql://gophkeeperuser:gophkeeperpwd@localhost:5432/gophkeeperdb?sslmode=disable"
+}

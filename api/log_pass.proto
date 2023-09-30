@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+import "registration.proto";
+import "google/protobuf/timestamp.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+message LogPass {
+  string name = 1;
+  bytes login = 2;
+  bytes pass = 3;
+  google.protobuf.Timestamp updated_at = 4;
+  bytes meta = 5;
+}
+
+service LogPasses {
+  rpc Insert(InsertLogPassRequest) returns (InsertResponse);
+  rpc Get(GetRequest) returns (GetLogPassResponse);
+  rpc Update(UpdateLogPassRequest) returns (UpdateLogPassResponse);
+  rpc Delete(DeleteLogPassRequest) returns (DeleteResponse);
+}
+
+message InsertLogPassRequest {
+  User user = 1;
+  LogPass log_pass = 2;
+}
+
+message InsertResponse {
+  bool is_inserted = 1;
+}
+
+message GetRequest {
+  User user = 1;
+  string name = 2;
+}
+
+message GetLogPassResponse {
+  LogPass log_pass = 1;
+  string error = 2;
+}
+
+message UpdateLogPassRequest {
+  User user = 1;
+  string name = 2;
+  LogPass log_pass = 3;
+}
+
+message UpdateLogPassResponse {
+  LogPass log_pass = 1;
+  string error = 2;
+}
+
+message DeleteLogPassRequest {
+  User user = 1;
+  string name = 2;
+}
+
+message DeleteResponse {
+  bool ok = 1;
+}
