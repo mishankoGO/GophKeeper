@@ -19,14 +19,14 @@ type DBRepository struct {
 	DB   *bolt.DB
 }
 
-func NewDBRepository(conf *config.Config, login string) (interfaces.Repository, error) {
-	name := fmt.Sprintf("internal/repository/bolt/backup/gophKeeper_%s.db", login)
+func NewDBRepository(conf *config.Config) (interfaces.Repository, error) {
+	name := fmt.Sprintf("internal/repository/bolt/backup/gophKeeper.db")
 	db, err := bolt.Open(name, 0600, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to bolt db: %w", err)
 	}
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("Credentials"))
+		_, err = tx.CreateBucketIfNotExists([]byte("Credentials"))
 		if err != nil {
 			return fmt.Errorf("error creating bucket: %w", err)
 		}
@@ -52,8 +52,36 @@ func NewDBRepository(conf *config.Config, login string) (interfaces.Repository, 
 	if err != nil {
 		return nil, fmt.Errorf("error updating db: %w", err)
 	}
-
+	fmt.Println("errr")
 	return &DBRepository{conf: conf, DB: db}, nil
+}
+
+func (r *DBRepository) InsertUser(cred *users.Credential, user *users.User) error {
+	err := r.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("Credentials"))
+
+		err := b.Put([]byte("user_id"), []byte(user.UserID))
+		if err != nil {
+			return err
+		}
+		err = b.Put([]byte("login"), []byte(cred.Login))
+		if err != nil {
+			return err
+		}
+		err = b.Put([]byte("password"), []byte(cred.Password))
+		if err != nil {
+			return err
+		}
+		err = b.Put([]byte("created_at"), []byte(user.CreatedAt.String()))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error inserting new user: %w", err)
+	}
+	return nil
 }
 
 // Login method is responsible for retrieving userID from database.
@@ -63,7 +91,7 @@ func (r *DBRepository) Login(login string) (*users.Credential, *users.User, erro
 	var log, password, userId string
 	var createdAtt time.Time
 	err := r.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("BinaryFiles"))
+		b := tx.Bucket([]byte("Credentials"))
 
 		uid := b.Get([]byte("user_id"))
 		l := b.Get([]byte("login"))
@@ -73,16 +101,19 @@ func (r *DBRepository) Login(login string) (*users.Credential, *users.User, erro
 			return fmt.Errorf("user is not registered")
 		}
 		log, password, userId = string(l), string(p), string(uid)
-		createdAt, err := time.Parse(time.RFC3339, string(c))
 
-		createdAtt = createdAt
+		format := "2006-01-02 15:04:05.000000 +0000 MST"
+		createdAt, err := time.Parse(format, string(c))
 		if err != nil {
 			return fmt.Errorf("error parsing creation time: %w", err)
 		}
+
+		createdAtt = createdAt
+
 		return nil
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("error retrieving login info")
+		return nil, nil, fmt.Errorf("error retrieving login info: %w", err)
 	}
 
 	// create user and credential

@@ -68,3 +68,8 @@ func (c *CardsClient) Delete(ctx context.Context, req *pb.DeleteCardRequest) (*p
 
 	return resp, nil
 }
+
+// List method to list all cards.
+func (c *CardsClient) List() {
+
+}

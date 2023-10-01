@@ -55,4 +55,5 @@ type TextsStorage interface {
 // UsersStorage interface is responsible for registering, login and inserting user to database.
 type UsersStorage interface {
 	Login(login string) (cred *users.Credential, user *users.User, err error)
+	InsertUser(cred *users.Credential, user *users.User) error
 }
