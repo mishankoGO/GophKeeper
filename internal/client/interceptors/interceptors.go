@@ -3,10 +3,11 @@ package interceptors
 
 import (
 	"context"
-	"github.com/mishankoGO/GophKeeper/internal/client/clients"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"log"
+
+	"github.com/mishankoGO/GophKeeper/internal/client/clients"
 )
 
 // AuthInterceptor contains auth client and token.
@@ -27,7 +28,6 @@ func NewAuthInterceptor(authClient *clients.UsersClient) (*AuthInterceptor, erro
 // getToken method returns token.
 func (i *AuthInterceptor) getToken() string {
 	i.accessToken = i.authClient.GetToken()
-	log.Printf("token refreshed: %v", i.accessToken)
 	return i.accessToken
 }
 

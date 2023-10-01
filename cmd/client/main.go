@@ -37,5 +37,57 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(insert)
+	log.Println("insert card: ", insert)
+
+	get, err := client.CardsClient.Get(ctx, &pb.GetRequest{Name: "test_card_new", User: regResp.GetUser()})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("get card: ", get)
+
+	card = &pb.Card{Name: "test_card_new", Card: []byte("new new card"), UpdatedAt: timestamppb.New(time.Now())}
+	update, err := client.CardsClient.Update(ctx, &pb.UpdateCardRequest{Name: "test_card_new", User: regResp.GetUser(), Card: card})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("update card: ", update)
+
+	delete, err := client.CardsClient.Delete(ctx, &pb.DeleteCardRequest{Name: "test_card_new", User: regResp.GetUser()})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("delete card: ", delete)
+
+	text := &pb.Text{Name: "test_text_new", Text: []byte("new text"), UpdatedAt: timestamppb.New(time.Now())}
+	insert, err = client.TextsClient.Insert(ctx, &pb.InsertTextRequest{User: regResp.GetUser(), Text: text})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("insert text: ", insert)
+
+	gettext, err := client.TextsClient.Get(ctx, &pb.GetRequest{Name: "test_text_new", User: regResp.GetUser()})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("get text: ", gettext)
+
+	text = &pb.Text{Name: "test_text_new", Text: []byte("new new text"), UpdatedAt: timestamppb.New(time.Now())}
+	updatetext, err := client.TextsClient.Update(ctx, &pb.UpdateTextRequest{Name: "test_text_new", User: regResp.GetUser(), Text: text})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("update text: ", updatetext)
+
+	delete, err = client.TextsClient.Delete(ctx, &pb.DeleteTextRequest{Name: "test_text_new", User: regResp.GetUser()})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("delete text: ", delete)
 }

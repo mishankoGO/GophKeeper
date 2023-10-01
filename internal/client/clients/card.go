@@ -10,10 +10,12 @@ package clients
 
 import (
 	"context"
-	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 )
 
 // CardsClient contains cards client service.

@@ -4,6 +4,7 @@ package interfaces
 
 import (
 	"context"
+
 	"github.com/mishankoGO/GophKeeper/internal/models/binary_files"
 	"github.com/mishankoGO/GophKeeper/internal/models/cards"
 	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
