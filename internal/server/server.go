@@ -4,7 +4,6 @@ package server
 
 import (
 	"fmt"
-	"github.com/mishankoGO/GophKeeper/internal/server/interceptors"
 	"net"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/mishankoGO/GophKeeper/config"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/interceptors"
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"github.com/mishankoGO/GophKeeper/internal/server/handlers"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"

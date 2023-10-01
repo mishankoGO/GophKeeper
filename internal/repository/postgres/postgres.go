@@ -3,20 +3,15 @@
 package postgres
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"github.com/mishankoGO/GophKeeper/config"
 	"github.com/mishankoGO/GophKeeper/internal/models/binary_files"
 	"github.com/mishankoGO/GophKeeper/internal/models/cards"
@@ -25,6 +20,8 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
 	query "github.com/mishankoGO/GophKeeper/internal/repository/sql"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
+	"log"
+	"time"
 )
 
 // DBRepository contains database handle.
@@ -157,21 +154,15 @@ func (r *DBRepository) GetBF(ctx context.Context, userID, name string) (*binary_
 		return nil, fmt.Errorf("error getting binary file %s: %w", n, err)
 	}
 
-	if !bytes.Equal(meta, []byte("")) {
-		// unmarshall metadata
-		var metaMap = make(map[string]string)
-		err = json.Unmarshal(meta, &metaMap)
-		if err != nil {
-			return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
-		}
-
-		// create binary file
-		var bf = &binary_files.Files{UserID: uid, Name: n, File: file, UpdatedAt: updatedAt, Meta: metaMap}
-		return bf, nil
+	// unmarshall metadata
+	var metaMap = make(map[string]string)
+	err = json.Unmarshal(meta, &metaMap)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
 	}
 
 	// create binary file
-	var bf = &binary_files.Files{UserID: uid, Name: n, File: file, UpdatedAt: updatedAt}
+	var bf = &binary_files.Files{UserID: uid, Name: n, File: file, UpdatedAt: updatedAt, Meta: metaMap}
 
 	return bf, nil
 }
@@ -233,22 +224,15 @@ func (r *DBRepository) GetLP(ctx context.Context, userID, name string) (*log_pas
 		return nil, fmt.Errorf("error getting log pass %s: %w", n, err)
 	}
 
-	if !bytes.Equal(meta, []byte("")) {
-		// unmarshall metadata
-		var metaMap = make(map[string]string)
-		err = json.Unmarshal(meta, &metaMap)
-		if err != nil {
-			return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
-		}
-
-		// create log pass
-		var lp = &log_passes.LogPasses{UserID: uid, Name: n, Login: login, Password: password, UpdatedAt: updatedAt, Meta: metaMap}
-
-		return lp, nil
+	// unmarshall metadata
+	var metaMap = make(map[string]string)
+	err = json.Unmarshal(meta, &metaMap)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
 	}
 
 	// create log pass
-	var lp = &log_passes.LogPasses{UserID: uid, Name: n, Login: login, Password: password, UpdatedAt: updatedAt}
+	var lp = &log_passes.LogPasses{UserID: uid, Name: n, Login: login, Password: password, UpdatedAt: updatedAt, Meta: metaMap}
 
 	return lp, nil
 }
@@ -309,18 +293,13 @@ func (r *DBRepository) GetC(ctx context.Context, userID, name string) (*cards.Ca
 		return nil, fmt.Errorf("error getting card %s: %v", n, err)
 	}
 
-	if !bytes.Equal(meta, []byte("")) {
-		var metaMap = make(map[string]string)
-		err = json.Unmarshal(meta, &metaMap)
-		if err != nil {
-			return nil, fmt.Errorf("error unmarshalling meta information: %v", err)
-		}
-
-		var c = &cards.Cards{UserID: uid, Name: n, Card: card, UpdatedAt: updatedAt, Meta: metaMap}
-		return c, nil
+	var metaMap = make(map[string]string)
+	err = json.Unmarshal(meta, &metaMap)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling meta information: %v", err)
 	}
 
-	var c = &cards.Cards{UserID: uid, Name: n, Card: card, UpdatedAt: updatedAt}
+	var c = &cards.Cards{UserID: uid, Name: n, Card: card, UpdatedAt: updatedAt, Meta: metaMap}
 	return c, nil
 }
 
@@ -375,18 +354,13 @@ func (r *DBRepository) GetT(ctx context.Context, userID, name string) (*texts.Te
 		return nil, fmt.Errorf("error getting text %s: %v", n, err)
 	}
 
-	if !bytes.Equal(meta, []byte("")) {
-		var metaMap = make(map[string]string)
-		err = json.Unmarshal(meta, &metaMap)
-		if err != nil {
-			return nil, fmt.Errorf("error unmarshalling meta information: %v", err)
-		}
-
-		var t = &texts.Texts{UserID: uid, Name: n, Text: text, UpdatedAt: updatedAt, Meta: metaMap}
-		return t, nil
+	var metaMap = make(map[string]string)
+	err = json.Unmarshal(meta, &metaMap)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling meta information: %v", err)
 	}
 
-	var t = &texts.Texts{UserID: uid, Name: n, Text: text, UpdatedAt: updatedAt}
+	var t = &texts.Texts{UserID: uid, Name: n, Text: text, UpdatedAt: updatedAt, Meta: metaMap}
 	return t, nil
 }
 
