@@ -39,7 +39,7 @@ func NewClient(conf *config.Config) (*Client, error) {
 	// create auth interceptor
 	interceptor, err := interceptors.NewAuthInterceptor(usersClient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating interceptor: %w", err)
 	}
 
 	// connect to server
@@ -49,7 +49,7 @@ func NewClient(conf *config.Config) (*Client, error) {
 		grpc.WithUnaryInterceptor(interceptor.Unary()),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error making connection: %w", err)
 	}
 
 	// connect cards client

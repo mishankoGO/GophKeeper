@@ -19,7 +19,7 @@ func main() {
 
 	client, err := client.NewClient(conf)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("You are offline!")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
