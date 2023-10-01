@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS log_passes (
         log_pass_id INT GENERATED ALWAYS AS IDENTITY,
         user_id UUID,
-        name VARCHAR(50) NOT NULL,
+        name VARCHAR(50) NOT NULL UNIQUE,
         login bytea NOT NULL,
         password bytea NOT NULL,
         updated_at TIMESTAMP,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS log_passes (
 CREATE TABLE IF NOT EXISTS texts (
         text_id INT GENERATED ALWAYS AS IDENTITY,
         user_id UUID,
-        name VARCHAR(50) NOT NULL,
+        name VARCHAR(50) NOT NULL UNIQUE,
         text bytea NOT NULL,
         updated_at TIMESTAMP,
         meta JSONB,
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS texts (
 CREATE TABLE IF NOT EXISTS cards (
         card_id INT GENERATED ALWAYS AS IDENTITY,
         user_id UUID,
-        name VARCHAR(50) NOT NULL,
+        name VARCHAR(50) NOT NULL UNIQUE,
         card bytea NOT NULL,
         updated_at TIMESTAMP,
         meta JSONB,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS cards (
 CREATE TABLE IF NOT EXISTS binary_files (
         file_id INT GENERATED ALWAYS AS IDENTITY,
         user_id UUID,
-        name VARCHAR(50) NOT NULL,
+        name VARCHAR(50) NOT NULL UNIQUE,
         file bytea NOT NULL,
         updated_at TIMESTAMP,
         meta JSONB,
