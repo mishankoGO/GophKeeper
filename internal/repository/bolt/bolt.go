@@ -11,6 +11,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 	"github.com/mishankoGO/GophKeeper/internal/models/texts"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
+	"strings"
 	"time"
 )
 
@@ -102,8 +103,8 @@ func (r *DBRepository) Login(login string) (*users.Credential, *users.User, erro
 		}
 		log, password, userId = string(l), string(p), string(uid)
 
-		format := "2006-01-02 15:04:05.000000 +0000 MST"
-		createdAt, err := time.Parse(format, string(c))
+		format := "2006-01-02 15:04:05"
+		createdAt, err := time.Parse(format, strings.Split(string(c), ".")[0])
 		if err != nil {
 			return fmt.Errorf("error parsing creation time: %w", err)
 		}
