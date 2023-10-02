@@ -53,8 +53,11 @@ func NewDBRepository(conf *config.Config) (interfaces.Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error updating db: %w", err)
 	}
-	fmt.Println("errr")
 	return &DBRepository{conf: conf, DB: db}, nil
+}
+
+func (r *DBRepository) Close() error {
+	return r.DB.Close()
 }
 
 func (r *DBRepository) InsertUser(cred *users.Credential, user *users.User) error {

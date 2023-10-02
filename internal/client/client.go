@@ -118,6 +118,7 @@ func (c *Client) Close() {
 	for _, conn := range c.conns {
 		conn.Close()
 	}
+	c.UsersClient.Close()
 }
 
 //func (c *Client) sync() error {

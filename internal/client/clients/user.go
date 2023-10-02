@@ -41,6 +41,10 @@ func (u *UsersClient) GetToken() string {
 	return u.token
 }
 
+func (u *UsersClient) Close() error {
+	return u.repo.Close()
+}
+
 // Login method logs in user by its credentials.
 func (u *UsersClient) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	if u.offline {

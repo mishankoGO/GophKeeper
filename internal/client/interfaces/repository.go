@@ -56,4 +56,5 @@ type TextsStorage interface {
 type UsersStorage interface {
 	Login(login string) (cred *users.Credential, user *users.User, err error)
 	InsertUser(cred *users.Credential, user *users.User) error
+	Close() error
 }
