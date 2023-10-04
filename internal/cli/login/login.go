@@ -129,7 +129,6 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+z":
 			m.Step = "index"
-			return m, nil
 
 		// Change cursor mode
 		case "ctrl+r":

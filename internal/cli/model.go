@@ -10,6 +10,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli/tab"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
+	"github.com/mishankoGO/GophKeeper/internal/security"
 )
 
 type Model struct {
@@ -27,12 +28,12 @@ type Model struct {
 	Client        *client.Client
 }
 
-func InitialModel(client *client.Client) *Model {
+func InitialModel(client *client.Client, security *security.Security) *Model {
 
 	loginModel := login.NewLoginModel(client)
 	registerModel := login.NewRegisterModel(client)
 	tabModel := tab.NewTabModel()
-	cardModel := card.NewCardModel()
+	cardModel := card.NewCardModel(client, security)
 	indexModel := index.NewIndexModel()
 	dataTypeModel := datatype.NewDataTypeModel()
 
@@ -57,17 +58,22 @@ func (m *Model) Init() tea.Cmd {
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Step == "index" {
+		m.IndexModel.Step = "index"
+		m.Step = "index"
 		_, cmd := m.IndexModel.Update(msg)
 		//m.IndexModel = &im
 		m.Step = m.IndexModel.Step
 		m.Finish = m.IndexModel.Finish
 		return m, cmd
 	} else if m.Step == "Login" {
+		m.LoginModel.Step = "Login"
+		m.Step = "Login"
 		_, cmd := m.LoginModel.Update(msg)
 		//m.LoginModel = *loginModel
 		//fmt.Println(m.Step, m.Finish, m.LoginModel.Step, m.LoginModel.Finish)
 		m.Step = m.LoginModel.Step
 		m.Finish = m.LoginModel.Finish
+		m.User = m.LoginModel.User
 		m.Err = m.LoginModel.Err
 		return m, cmd
 	} else if m.Step == "Register" {
@@ -85,6 +91,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Finish = m.TabModel.Finish
 		return m, cmd
 	} else if m.Step == "DataTypes" {
+		m.DataTypeModel.Step = "DataTypes"
+		m.Step = "DataTypes"
 		_, cmd := m.DataTypeModel.Update(msg)
 		//m.DataTypeModel = *dataTypeModel
 		m.Step = m.DataTypeModel.Step
@@ -93,6 +101,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.Step == "Card_INSERT" {
 		_, cmd := m.CardModel.Update(msg)
 		//m.CardModel = *cardModel
+		m.CardModel.User = m.User
 		m.Step = m.CardModel.Step
 		m.Finish = m.CardModel.Finish
 		return m, cmd

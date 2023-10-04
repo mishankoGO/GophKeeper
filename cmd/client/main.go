@@ -7,8 +7,13 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/repository/bolt"
+	"github.com/mishankoGO/GophKeeper/internal/security"
 	"log"
 	"os"
+)
+
+const (
+	keyPhrase = "secret"
 )
 
 func main() {
@@ -28,7 +33,13 @@ func main() {
 	}
 	defer client.Close()
 
-	p := tea.NewProgram(cli.InitialModel(client))
+	// init security
+	security, err := security.NewSecurity(keyPhrase)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p := tea.NewProgram(cli.InitialModel(client, security))
 
 	// Run returns the model as a tea.Model.
 

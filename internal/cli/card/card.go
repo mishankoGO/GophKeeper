@@ -1,15 +1,26 @@
 package card
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mishankoGO/GophKeeper/internal/cli/utils"
+	"github.com/mishankoGO/GophKeeper/internal/client"
+	"github.com/mishankoGO/GophKeeper/internal/converters"
+	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/users"
+	"github.com/mishankoGO/GophKeeper/internal/security"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 )
 
 const (
-	ccn = iota
+	name = iota
+	ccn
 	exp
 	cvv
 )
@@ -30,17 +41,26 @@ var (
 
 type CardModel struct {
 	CardInputs  []textinput.Model
+	Security    security.Security
 	FocusedCard int
+	Client      *client.Client
+	User        *users.User
 	Finish      bool
 	Step        string
 	Err         error
 }
 
-func NewCardModel() CardModel {
-	var cardInputs = make([]textinput.Model, 3)
+func NewCardModel(client *client.Client, security *security.Security) CardModel {
+	var cardInputs = make([]textinput.Model, 4)
+	cardInputs[name] = textinput.New()
+	cardInputs[name].Placeholder = "Enter name"
+	cardInputs[name].Focus()
+	cardInputs[name].CharLimit = 20
+	cardInputs[name].Width = 30
+	cardInputs[name].Prompt = ""
+
 	cardInputs[ccn] = textinput.New()
 	cardInputs[ccn].Placeholder = "4505 **** **** 1234"
-	cardInputs[ccn].Focus()
 	cardInputs[ccn].CharLimit = 20
 	cardInputs[ccn].Width = 30
 	cardInputs[ccn].Prompt = ""
@@ -64,6 +84,8 @@ func NewCardModel() CardModel {
 		CardInputs:  cardInputs,
 		FocusedCard: 0,
 		Step:        "Card_INSERT",
+		Client:      client,
+		Security:    *security,
 	}
 	return cardModel
 }
@@ -82,7 +104,35 @@ func (m *CardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if m.FocusedCard == len(m.CardInputs)-1 {
-				return m, tea.Quit
+				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				defer cancel()
+
+				name := m.CardInputs[name].Value()
+				card_number := m.CardInputs[ccn].Value()
+				expDate := m.CardInputs[exp].Value()
+				cvv := m.CardInputs[cvv].Value()
+				cardString := fmt.Sprintf("%s,%s,%s", card_number, expDate, cvv)
+
+				// encrypt data
+				var buf bytes.Buffer
+				encoder := json.NewEncoder(&buf)
+				err := encoder.Encode(cardString)
+				if err != nil {
+					m.Err = err
+				}
+				encData := m.Security.EncryptData(buf)
+
+				card := &pb.Card{Name: name, Card: encData, UpdatedAt: timestamppb.New(time.Now())}
+				pbUser := converters.UserToPBUser(m.User)
+
+				_, err = m.Client.CardsClient.Insert(ctx, &pb.InsertCardRequest{User: pbUser, Card: card})
+				if err != nil {
+					m.Err = err
+				}
+
+				m.Finish = true
+				m.Step = "DataTypes"
+				return m, nil
 			}
 			m.NextInput()
 		case tea.KeyCtrlZ:
@@ -119,11 +169,16 @@ func (m CardModel) View() string {
  %s
  %s
 
+ %s
+ %s
+
  %s  %s
  %s  %s
 
  %s
 `,
+		inputStyle.Width(30).Render("Card Name"),
+		m.CardInputs[name].View(),
 		inputStyle.Width(30).Render("Card Number"),
 		m.CardInputs[ccn].View(),
 		inputStyle.Width(6).Render("EXP"),
