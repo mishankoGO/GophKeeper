@@ -4,7 +4,7 @@ import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mishankoGO/GophKeeper/config"
-	"github.com/mishankoGO/GophKeeper/internal/cli/index"
+	"github.com/mishankoGO/GophKeeper/internal/cli"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/repository/bolt"
 	"log"
@@ -28,20 +28,19 @@ func main() {
 	}
 	defer client.Close()
 
-	p := tea.NewProgram(index.InitialModel(client), tea.WithAltScreen())
+	p := tea.NewProgram(cli.InitialModel(client))
 
 	// Run returns the model as a tea.Model.
 
-	m, err := p.Run()
+	_, err = p.Run()
 	if err != nil {
 		fmt.Println("Oh no:", err)
 		os.Exit(1)
 	}
 
 	// Assert the final tea.Model to our local model and print the choice.
-	if m, ok := m.(index.IndexModel); ok && m.Choice != "" {
-		fmt.Printf("\n---\nYou chose %s!\n", m.Choice)
-	}
+	fmt.Printf("Bye!")
+
 	//	if m.Choice == "Login" {
 	//		for {
 	//			m, err := tea.NewProgram(login.InitialModel(client), tea.WithAltScreen()).Run()
