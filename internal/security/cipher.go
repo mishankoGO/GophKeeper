@@ -60,12 +60,14 @@ func NewSecurity(keyPhrase string) (*Security, error) {
 
 // EncryptData method ciphers input data.
 func (s *Security) EncryptData(buf bytes.Buffer) []byte {
+	fmt.Println("encrypt nonce: ", s.nonce, s.key)
 	encData := s.aesgcm.Seal(nil, s.nonce, buf.Bytes(), nil)
 	return encData
 }
 
 // DecryptData method deciphers input data.
 func (s *Security) DecryptData(encData []byte) ([]byte, error) {
+	fmt.Println("decrypt nonce: ", s.nonce, s.key)
 	decData, err := s.aesgcm.Open(nil, s.nonce, encData, nil) // расшифровываем
 	if err != nil {
 		return nil, fmt.Errorf("error decrypting data: %w", err)

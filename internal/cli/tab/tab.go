@@ -10,6 +10,8 @@ var (
 	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
 	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	blurredStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle         = blurredStyle.Copy()
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
@@ -65,6 +67,8 @@ func (m TabModel) View() string {
 
 	var renderedTabs []string
 
+	doc.WriteString("Choose your data\n\n")
+
 	for i, t := range m.Tabs {
 		var style lipgloss.Style
 		isFirst, isLast, isActive := i == 0, i == len(m.Tabs)-1, i == m.ActiveTab
@@ -91,6 +95,7 @@ func (m TabModel) View() string {
 	doc.WriteString(row)
 	doc.WriteString("\n")
 	doc.WriteString(windowStyle.Width(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize()).Render(m.TabContent[m.ActiveTab]))
+	doc.WriteString(helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"))
 	return docStyle.Render(doc.String())
 }
 

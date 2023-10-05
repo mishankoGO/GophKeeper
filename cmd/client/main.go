@@ -27,19 +27,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client, err := client.NewClient(conf, repo)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-
 	// init security
 	security, err := security.NewSecurity(keyPhrase)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	p := tea.NewProgram(cli.InitialModel(client, security))
+	client, err := client.NewClient(conf, repo, security)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+
+	p := tea.NewProgram(cli.InitialModel(client))
 
 	// Run returns the model as a tea.Model.
 
@@ -50,6 +50,9 @@ func main() {
 	}
 
 	// Assert the final tea.Model to our local model and print the choice.
+	//if m, ok := m.(cli.Model); ok && m.Finish {
+	//	break
+	//}
 	fmt.Printf("Bye!")
 
 	//	if m.Choice == "Login" {

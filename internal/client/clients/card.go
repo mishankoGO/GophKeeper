@@ -9,10 +9,12 @@
 package clients
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
-
+	"github.com/mishankoGO/GophKeeper/internal/security"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,18 +24,19 @@ import (
 
 // CardsClient contains cards client service.
 type CardsClient struct {
-	service pb.CardsClient
-	repo    interfaces.Repository
-	offline bool
+	service  pb.CardsClient
+	Security *security.Security
+	repo     interfaces.Repository
+	offline  bool
 }
 
 // NewCardsClient creates new cards client.
-func NewCardsClient(cc *grpc.ClientConn, repo interfaces.Repository) *CardsClient {
+func NewCardsClient(cc *grpc.ClientConn, repo interfaces.Repository, security *security.Security) *CardsClient {
 	if cc != nil {
 		service := pb.NewCardsClient(cc)
-		return &CardsClient{service: service, repo: repo, offline: false}
+		return &CardsClient{service: service, repo: repo, Security: security, offline: false}
 	}
-	return &CardsClient{repo: repo, offline: true}
+	return &CardsClient{repo: repo, Security: security, offline: true}
 }
 
 // Insert method inserts new card.
@@ -42,10 +45,24 @@ func (c *CardsClient) Insert(ctx context.Context, req *pb.InsertCardRequest) (*p
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error converting proto card to model card: %v", err)
 	}
+
+	// encrypt data
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	err = encoder.Encode(string(card.Card))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error encoding card: %v", err)
+	}
+	encData := c.Security.EncryptData(buf)
+
+	// set encrypted card as Card
+	card.Card = encData
+
 	err = c.repo.InsertC(card)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error inserting card: %v", err)
 	}
+
 	if !c.offline {
 		resp, err := c.service.Insert(ctx, req)
 		if err != nil {
@@ -60,23 +77,32 @@ func (c *CardsClient) Insert(ctx context.Context, req *pb.InsertCardRequest) (*p
 
 // Get method retrieves card information.
 func (c *CardsClient) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetCardResponse, error) {
-	card, err := c.repo.GetC(req.GetName())
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error retrieving card: %v", err)
-	}
-	protoCard, err := converters.CardToPBCard(card)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error converting model card to proto card: %v", err)
-	}
+	if c.offline {
+		card, err := c.repo.GetC(req.GetName())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error retrieving card: %v", err)
+		}
 
-	//resp, err := c.service.Get(ctx, req)
-	//if err != nil {
-	//	return nil, status.Errorf(codes.Internal, "error getting card information: %v", err)
-	//}
-	//
-	//return resp, nil
+		// decrypt data
+		decData, err := c.Security.DecryptData(card.Card)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+		}
 
-	return &pb.GetCardResponse{Card: protoCard}, nil
+		// set decrypted card to Card
+		card.Card = bytes.Trim(decData, "\"\n")
+
+		protoCard, err := converters.CardToPBCard(card)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error converting model card to proto card: %v", err)
+		}
+		return &pb.GetCardResponse{Card: protoCard}, nil
+	}
+	resp, err := c.service.Get(ctx, req)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting card information: %v", err)
+	}
+	return resp, nil
 }
 
 // Update method updates card information.
@@ -85,10 +111,24 @@ func (c *CardsClient) Update(ctx context.Context, req *pb.UpdateCardRequest) (*p
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error converting proto card to model card: %v", err)
 	}
+
+	// encrypt data
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	err = encoder.Encode(string(mCard.Card))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error encoding card: %v", err)
+	}
+	encData := c.Security.EncryptData(buf)
+
+	// set encrypted card as Card
+	mCard.Card = encData
+
 	_, err = c.repo.UpdateC(mCard)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error updating card: %v", err)
 	}
+
 	if !c.offline {
 		resp, err := c.service.Update(ctx, req)
 		if err != nil {

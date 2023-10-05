@@ -7,6 +7,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/client/clients"
 	"github.com/mishankoGO/GophKeeper/internal/client/interceptors"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
+	"github.com/mishankoGO/GophKeeper/internal/security"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
@@ -27,7 +28,7 @@ type Client struct {
 }
 
 // NewClient function create new Client instance.
-func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error) {
+func NewClient(conf *config.Config, repo interfaces.Repository, security *security.Security) (*Client, error) {
 	// parse port
 	port := ":" + strings.Split(conf.Address, ":")[1]
 
@@ -41,7 +42,7 @@ func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error)
 		usersClient := clients.NewUsersClient(nil, repo)
 
 		// connect cards client
-		cardsClient := clients.NewCardsClient(nil, repo)
+		cardsClient := clients.NewCardsClient(nil, repo, security)
 
 		// connect texts client
 		textsClient := clients.NewTextsClient(nil, repo)
@@ -85,7 +86,7 @@ func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error)
 		}
 
 		// connect cards client
-		cardsClient := clients.NewCardsClient(conn2, repo)
+		cardsClient := clients.NewCardsClient(conn2, repo, security)
 
 		// connect texts client
 		textsClient := clients.NewTextsClient(conn2, repo)

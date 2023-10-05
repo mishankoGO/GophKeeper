@@ -6,7 +6,13 @@ package index
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"strings"
+)
+
+var (
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle.Copy()
 )
 
 var choices = []string{"Login", "Register"}
@@ -65,7 +71,7 @@ func (m IndexModel) View() string {
 		s.WriteString(choices[i])
 		s.WriteString("\n")
 	}
-	s.WriteString("\n(press q to quit)\n")
+	s.WriteString(helpStyle.Render("\nctrl+c to quit\n"))
 
 	return s.String()
 }

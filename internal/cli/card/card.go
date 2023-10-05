@@ -1,9 +1,7 @@
 package card
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,9 +10,9 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/cards"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"github.com/mishankoGO/GophKeeper/internal/security"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"strings"
 	"time"
 )
 
@@ -25,10 +23,6 @@ const (
 	cvv
 )
 
-type (
-	errMsg error
-)
-
 const (
 	hotPink  = lipgloss.Color("#FF06B7")
 	darkGray = lipgloss.Color("#767676")
@@ -37,102 +31,272 @@ const (
 var (
 	inputStyle    = lipgloss.NewStyle().Foreground(hotPink)
 	continueStyle = lipgloss.NewStyle().Foreground(darkGray)
+	blurredStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle     = blurredStyle.Copy()
 )
 
 type CardModel struct {
-	CardInputs  []textinput.Model
-	Security    security.Security
-	FocusedCard int
-	Client      *client.Client
-	User        *users.User
-	Finish      bool
-	Step        string
-	Err         error
+	CardInsertInputs []textinput.Model
+	CardGetInputs    []textinput.Model
+	CardUpdateInputs []textinput.Model
+	CardDeleteInputs []textinput.Model
+	GetResult        string
+	InsertResult     bool
+	UpdateResult     string
+	DeleteResult     bool
+	FocusedCard      int
+	Client           *client.Client
+	User             *users.User
+	Finish           bool
+	Step             string
+	Err              error
 }
 
-func NewCardModel(client *client.Client, security *security.Security) CardModel {
-	var cardInputs = make([]textinput.Model, 4)
-	cardInputs[name] = textinput.New()
-	cardInputs[name].Placeholder = "Enter name"
-	cardInputs[name].Focus()
-	cardInputs[name].CharLimit = 20
-	cardInputs[name].Width = 30
-	cardInputs[name].Prompt = ""
+func NewCardModel(client *client.Client) CardModel {
+	var cardInsertInputs = make([]textinput.Model, 4)
+	var cardUpdateInputs = make([]textinput.Model, 4)
+	var cardGetInputs = make([]textinput.Model, 1)
+	var cardDeleteInputs = make([]textinput.Model, 1)
 
-	cardInputs[ccn] = textinput.New()
-	cardInputs[ccn].Placeholder = "4505 **** **** 1234"
-	cardInputs[ccn].CharLimit = 20
-	cardInputs[ccn].Width = 30
-	cardInputs[ccn].Prompt = ""
-	cardInputs[ccn].Validate = utils.CCNValidator
+	cardGetInputs[name] = textinput.New()
+	cardGetInputs[name].Placeholder = "Enter name"
+	cardGetInputs[name].Focus()
+	cardGetInputs[name].CharLimit = 20
+	cardGetInputs[name].Width = 30
+	cardGetInputs[name].Prompt = ""
 
-	cardInputs[exp] = textinput.New()
-	cardInputs[exp].Placeholder = "MM/YY "
-	cardInputs[exp].CharLimit = 5
-	cardInputs[exp].Width = 5
-	cardInputs[exp].Prompt = ""
-	cardInputs[exp].Validate = utils.EXPValidator
+	cardDeleteInputs[name] = textinput.New()
+	cardDeleteInputs[name].Placeholder = "Enter name"
+	cardDeleteInputs[name].Focus()
+	cardDeleteInputs[name].CharLimit = 20
+	cardDeleteInputs[name].Width = 30
+	cardDeleteInputs[name].Prompt = ""
 
-	cardInputs[cvv] = textinput.New()
-	cardInputs[cvv].Placeholder = "XXX"
-	cardInputs[cvv].CharLimit = 3
-	cardInputs[cvv].Width = 5
-	cardInputs[cvv].Prompt = ""
-	cardInputs[cvv].Validate = utils.CVVValidator
+	cardInsertInputs[name] = textinput.New()
+	cardInsertInputs[name].Placeholder = "Enter name"
+	cardInsertInputs[name].Focus()
+	cardInsertInputs[name].CharLimit = 20
+	cardInsertInputs[name].Width = 30
+	cardInsertInputs[name].Prompt = ""
+
+	cardInsertInputs[ccn] = textinput.New()
+	cardInsertInputs[ccn].Placeholder = "4505 **** **** 1234"
+	cardInsertInputs[ccn].CharLimit = 20
+	cardInsertInputs[ccn].Width = 30
+	cardInsertInputs[ccn].Prompt = ""
+	cardInsertInputs[ccn].Validate = utils.CCNValidator
+
+	cardInsertInputs[exp] = textinput.New()
+	cardInsertInputs[exp].Placeholder = "MM/YY "
+	cardInsertInputs[exp].CharLimit = 5
+	cardInsertInputs[exp].Width = 5
+	cardInsertInputs[exp].Prompt = ""
+	cardInsertInputs[exp].Validate = utils.EXPValidator
+
+	cardInsertInputs[cvv] = textinput.New()
+	cardInsertInputs[cvv].Placeholder = "XXX"
+	cardInsertInputs[cvv].CharLimit = 3
+	cardInsertInputs[cvv].Width = 5
+	cardInsertInputs[cvv].Prompt = ""
+	cardInsertInputs[cvv].Validate = utils.CVVValidator
+
+	cardUpdateInputs[name] = textinput.New()
+	cardUpdateInputs[name].Placeholder = "Enter name"
+	cardUpdateInputs[name].Focus()
+	cardUpdateInputs[name].CharLimit = 20
+	cardUpdateInputs[name].Width = 30
+	cardUpdateInputs[name].Prompt = ""
+
+	cardUpdateInputs[ccn] = textinput.New()
+	cardUpdateInputs[ccn].Placeholder = "4505 **** **** 1234"
+	cardUpdateInputs[ccn].CharLimit = 20
+	cardUpdateInputs[ccn].Width = 30
+	cardUpdateInputs[ccn].Prompt = ""
+	cardUpdateInputs[ccn].Validate = utils.CCNValidator
+
+	cardUpdateInputs[exp] = textinput.New()
+	cardUpdateInputs[exp].Placeholder = "MM/YY "
+	cardUpdateInputs[exp].CharLimit = 5
+	cardUpdateInputs[exp].Width = 5
+	cardUpdateInputs[exp].Prompt = ""
+	cardUpdateInputs[exp].Validate = utils.EXPValidator
+
+	cardUpdateInputs[cvv] = textinput.New()
+	cardUpdateInputs[cvv].Placeholder = "XXX"
+	cardUpdateInputs[cvv].CharLimit = 3
+	cardUpdateInputs[cvv].Width = 5
+	cardUpdateInputs[cvv].Prompt = ""
+	cardUpdateInputs[cvv].Validate = utils.CVVValidator
 
 	cardModel := CardModel{
-		CardInputs:  cardInputs,
-		FocusedCard: 0,
-		Step:        "Card_INSERT",
-		Client:      client,
-		Security:    *security,
+		CardInsertInputs: cardInsertInputs,
+		CardUpdateInputs: cardUpdateInputs,
+		CardGetInputs:    cardGetInputs,
+		CardDeleteInputs: cardDeleteInputs,
+		FocusedCard:      0,
+		GetResult:        "",
+		UpdateResult:     "",
+		Client:           client,
 	}
 	return cardModel
 }
-
-/* CARD insert */
 
 func (m *CardModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
 func (m *CardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds = make([]tea.Cmd, len(m.CardInputs))
+	if m.Step == "Card_INSERT" {
+		return updateCardInsert(msg, m)
+	} else if m.Step == "Card_GET" {
+		return updateCardGet(msg, m)
+	} else if m.Step == "Card_UPDATE" {
+		return updateCardUpdate(msg, m)
+	} else if m.Step == "Card_DELETE" {
+		return updateCardDelete(msg, m)
+	}
+	m.Step = "Card_GET"
+	return m, nil
+}
 
+func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
+	var cmds = make([]tea.Cmd, len(m.CardGetInputs))
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			if m.FocusedCard == len(m.CardInputs)-1 {
+			if m.FocusedCard == len(m.CardGetInputs)-1 {
 				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 				defer cancel()
 
-				name := m.CardInputs[name].Value()
-				card_number := m.CardInputs[ccn].Value()
-				expDate := m.CardInputs[exp].Value()
-				cvv := m.CardInputs[cvv].Value()
-				cardString := fmt.Sprintf("%s,%s,%s", card_number, expDate, cvv)
+				name_ := m.CardGetInputs[name].Value()
 
-				// encrypt data
-				var buf bytes.Buffer
-				encoder := json.NewEncoder(&buf)
-				err := encoder.Encode(cardString)
-				if err != nil {
-					m.Err = err
-				}
-				encData := m.Security.EncryptData(buf)
-
-				card := &pb.Card{Name: name, Card: encData, UpdatedAt: timestamppb.New(time.Now())}
 				pbUser := converters.UserToPBUser(m.User)
 
-				_, err = m.Client.CardsClient.Insert(ctx, &pb.InsertCardRequest{User: pbUser, Card: card})
+				getResp, err := m.Client.CardsClient.Get(ctx, &pb.GetRequest{User: pbUser, Name: name_})
 				if err != nil {
 					m.Err = err
+					return m, nil
 				}
 
-				m.Finish = true
-				m.Step = "DataTypes"
-				return m, nil
+				m.CardGetInputs[name].Reset()
+				m.GetResult = string(getResp.GetCard().Card)
+				m.Step = "Card_GET"
+				m.CardGetInputs[name].Reset()
+				m.FocusedCard = 0
+				return m, tea.ClearScreen
+			}
+			m.NextInput()
+		case tea.KeyCtrlZ:
+			m.Step = "DataTypes"
+		case tea.KeyCtrlC:
+			m.Finish = true
+			return m, tea.Quit
+		case tea.KeyShiftTab, tea.KeyCtrlP:
+			m.PrevInput()
+		case tea.KeyTab, tea.KeyCtrlN:
+			m.NextInput()
+		}
+		for i := range m.CardGetInputs {
+			m.CardGetInputs[i].Blur()
+		}
+		m.CardGetInputs[m.FocusedCard].Focus()
+
+	}
+	for i := range m.CardGetInputs {
+		m.CardGetInputs[i], cmds[i] = m.CardGetInputs[i].Update(msg)
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func updateCardDelete(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
+	var cmds = make([]tea.Cmd, len(m.CardDeleteInputs))
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEnter:
+			if m.FocusedCard == len(m.CardDeleteInputs)-1 {
+				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				defer cancel()
+
+				name_ := m.CardDeleteInputs[name].Value()
+
+				pbUser := converters.UserToPBUser(m.User)
+
+				deleteResp, err := m.Client.CardsClient.Delete(ctx, &pb.DeleteCardRequest{User: pbUser, Name: name_})
+				if err != nil {
+					m.Err = err
+					return m, nil
+				}
+
+				m.CardDeleteInputs[name].Reset()
+				m.DeleteResult = deleteResp.GetOk()
+				m.Step = "Card_DELETE"
+				m.CardDeleteInputs[name].Reset()
+				m.FocusedCard = 0
+				return m, tea.ClearScreen
+			}
+			m.NextInput()
+		case tea.KeyCtrlZ:
+			m.Step = "DataTypes"
+		case tea.KeyCtrlC:
+			m.Finish = true
+			return m, tea.Quit
+		case tea.KeyShiftTab, tea.KeyCtrlP:
+			m.PrevInput()
+		case tea.KeyTab, tea.KeyCtrlN:
+			m.NextInput()
+		}
+		for i := range m.CardDeleteInputs {
+			m.CardDeleteInputs[i].Blur()
+		}
+		m.CardDeleteInputs[m.FocusedCard].Focus()
+
+	}
+	for i := range m.CardDeleteInputs {
+		m.CardDeleteInputs[i], cmds[i] = m.CardDeleteInputs[i].Update(msg)
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func updateCardInsert(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
+	var cmds = make([]tea.Cmd, len(m.CardInsertInputs))
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEnter:
+			if m.FocusedCard == len(m.CardInsertInputs)-1 {
+				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				defer cancel()
+
+				name_ := m.CardInsertInputs[name].Value()
+				cardNumber := m.CardInsertInputs[ccn].Value()
+				expDate := m.CardInsertInputs[exp].Value()
+				cvv_ := m.CardInsertInputs[cvv].Value()
+				cardString := fmt.Sprintf("%s,%s,%s", cardNumber, expDate, cvv_)
+
+				pbUser := converters.UserToPBUser(m.User)
+				card := &cards.Cards{UserID: m.User.UserID, Name: name_, Card: []byte(cardString), UpdatedAt: time.Now()}
+
+				pbCard, err := converters.CardToPBCard(card)
+				if err != nil {
+					m.Err = err
+					return m, nil
+				}
+
+				_, err = m.Client.CardsClient.Insert(ctx, &pb.InsertCardRequest{User: pbUser, Card: pbCard})
+				if err != nil {
+					m.Err = err
+					return m, nil
+				}
+				m.CardInsertInputs[name].Reset()
+				m.CardInsertInputs[ccn].Reset()
+				m.CardInsertInputs[exp].Reset()
+				m.CardInsertInputs[cvv].Reset()
+
+				m.Step = "Card_INSERT"
+				m.FocusedCard = 0
+				return m, tea.ClearScreen
 			}
 			m.NextInput()
 		case tea.KeyCtrlZ:
@@ -145,25 +309,188 @@ func (m *CardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyTab, tea.KeyCtrlN:
 			m.NextInput()
 		}
-		for i := range m.CardInputs {
-			m.CardInputs[i].Blur()
+		for i := range m.CardInsertInputs {
+			m.CardInsertInputs[i].Blur()
 		}
-		m.CardInputs[m.FocusedCard].Focus()
-
-	// We handle errors just like any other message
-	case errMsg:
-		m.Err = msg
-		return m, nil
+		m.CardInsertInputs[m.FocusedCard].Focus()
 	}
+	for i := range m.CardInsertInputs {
+		m.CardInsertInputs[i], cmds[i] = m.CardInsertInputs[i].Update(msg)
+	}
+	return m, tea.Batch(cmds...)
+}
 
-	for i := range m.CardInputs {
-		m.CardInputs[i], cmds[i] = m.CardInputs[i].Update(msg)
+func updateCardUpdate(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
+	var cmds = make([]tea.Cmd, len(m.CardUpdateInputs))
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEnter:
+			if m.FocusedCard == len(m.CardUpdateInputs)-1 {
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
+
+				name_ := m.CardUpdateInputs[name].Value()
+				cardNumber := m.CardUpdateInputs[ccn].Value()
+				expDate := m.CardUpdateInputs[exp].Value()
+				cvv_ := m.CardUpdateInputs[cvv].Value()
+				cardString := fmt.Sprintf("%s,%s,%s", cardNumber, expDate, cvv_)
+
+				pbUser := converters.UserToPBUser(m.User)
+				card := &cards.Cards{UserID: m.User.UserID, Name: name_, Card: []byte(cardString), UpdatedAt: time.Now()}
+
+				pbCard, err := converters.CardToPBCard(card)
+				if err != nil {
+					m.Err = err
+					return m, nil
+				}
+
+				_, err = m.Client.CardsClient.Update(ctx, &pb.UpdateCardRequest{User: pbUser, Card: pbCard})
+				if err != nil {
+					m.Err = err
+					return m, nil
+				}
+				m.CardUpdateInputs[name].Reset()
+				m.CardUpdateInputs[ccn].Reset()
+				m.CardUpdateInputs[exp].Reset()
+				m.CardUpdateInputs[cvv].Reset()
+
+				m.FocusedCard = 0
+
+				m.Step = "Card_UPDATE"
+
+				return m, tea.ClearScreen
+			}
+			m.NextInput()
+		case tea.KeyCtrlZ:
+			m.Step = "DataTypes"
+		case tea.KeyCtrlC:
+			m.Finish = true
+			return m, tea.Quit
+		case tea.KeyShiftTab, tea.KeyCtrlP:
+			m.PrevInput()
+		case tea.KeyTab, tea.KeyCtrlN:
+			m.NextInput()
+		}
+		for i := range m.CardUpdateInputs {
+			m.CardUpdateInputs[i].Blur()
+		}
+		m.CardUpdateInputs[m.FocusedCard].Focus()
+	}
+	for i := range m.CardUpdateInputs {
+		m.CardUpdateInputs[i], cmds[i] = m.CardUpdateInputs[i].Update(msg)
 	}
 	return m, tea.Batch(cmds...)
 }
 
 func (m CardModel) View() string {
-	return fmt.Sprintf(
+	if m.Step == "Card_INSERT" {
+		return viewCardInsert(m)
+	} else if m.Step == "Card_UPDATE" {
+		return viewCardUpdate(m)
+	} else if m.Step == "Card_DELETE" {
+		return viewCardDelete(m)
+	}
+	return viewCardGet(m)
+}
+
+func viewCardGet(m CardModel) string {
+	var b strings.Builder
+
+	if m.Err != nil {
+		b.WriteString(fmt.Sprintf("Error occured during card retrieval: %v", m.Err))
+	}
+
+	view := fmt.Sprintf(
+		`Enter card name:
+
+%s
+%s`,
+		inputStyle.Width(30).Render("Card Name"),
+		m.CardGetInputs[name].View(),
+	)
+
+	if m.GetResult != "" {
+		card := strings.Split(m.GetResult, ",")
+
+		view = fmt.Sprintf(
+			`Enter card name:
+
+%s
+%s
+
+%s
+%s
+
+%s %s
+%s %s
+
+%s`,
+			inputStyle.Width(30).Render("Card Name"),
+			m.CardGetInputs[name].View(),
+			inputStyle.Render("Card Number"),
+			card[0],
+			inputStyle.Width(6).Render("EXP"),
+			card[1],
+			inputStyle.Width(6).Render("CVV"),
+			card[2],
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+		) + "\n"
+		b.WriteString(view)
+	}
+	b.WriteString(view)
+	return b.String()
+}
+
+func viewCardDelete(m CardModel) string {
+	var b strings.Builder
+
+	if m.Err != nil {
+		b.WriteString(fmt.Sprintf("Error occured during card deletion: %v", m.Err))
+	}
+
+	view := fmt.Sprintf(
+		`Enter card name:
+
+%s
+%s`,
+		inputStyle.Width(30).Render("Card Name"),
+		m.CardDeleteInputs[name].View(),
+	)
+
+	if m.DeleteResult {
+		res := m.DeleteResult
+
+		view = fmt.Sprintf(
+			`Enter card name:
+
+%s
+%s
+
+%s
+%v
+
+%s`,
+			inputStyle.Width(30).Render("Card Name"),
+			m.CardGetInputs[name].View(),
+			inputStyle.Render("Card Deleted"),
+			res,
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+		) + "\n"
+		b.WriteString(view)
+	}
+	b.WriteString(view)
+	return b.String()
+}
+
+func viewCardInsert(m CardModel) string {
+	var b strings.Builder
+
+	if m.Err != nil {
+		b.WriteString(fmt.Sprintf("Error occured during card insertion: %v", m.Err))
+	}
+
+	view := fmt.Sprintf(
 		`Enter new card info:
 
  %s
@@ -176,28 +503,73 @@ func (m CardModel) View() string {
  %s  %s
 
  %s
+
+ %s
 `,
 		inputStyle.Width(30).Render("Card Name"),
-		m.CardInputs[name].View(),
+		m.CardInsertInputs[name].View(),
 		inputStyle.Width(30).Render("Card Number"),
-		m.CardInputs[ccn].View(),
+		m.CardInsertInputs[ccn].View(),
 		inputStyle.Width(6).Render("EXP"),
 		inputStyle.Width(6).Render("CVV"),
-		m.CardInputs[exp].View(),
-		m.CardInputs[cvv].View(),
+		m.CardInsertInputs[exp].View(),
+		m.CardInsertInputs[cvv].View(),
 		continueStyle.Render("Continue ->"),
+		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 	) + "\n"
+	b.WriteString(view)
+
+	return b.String()
+}
+
+func viewCardUpdate(m CardModel) string {
+	var b strings.Builder
+
+	if m.Err != nil {
+		b.WriteString(fmt.Sprintf("Error occured during card updating: %v", m.Err))
+	}
+
+	view := fmt.Sprintf(
+		`Enter new card info:
+
+ %s
+ %s
+
+ %s
+ %s
+
+ %s  %s
+ %s  %s
+
+ %s
+
+ %s
+`,
+		inputStyle.Width(30).Render("Card Name"),
+		m.CardInsertInputs[name].View(),
+		inputStyle.Width(30).Render("Card Number"),
+		m.CardInsertInputs[ccn].View(),
+		inputStyle.Width(6).Render("EXP"),
+		inputStyle.Width(6).Render("CVV"),
+		m.CardInsertInputs[exp].View(),
+		m.CardInsertInputs[cvv].View(),
+		continueStyle.Render("Continue ->"),
+		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+	) + "\n"
+	b.WriteString(view)
+
+	return b.String()
 }
 
 func (m *CardModel) NextInput() {
-	m.FocusedCard = (m.FocusedCard + 1) % len(m.CardInputs)
+	m.FocusedCard = (m.FocusedCard + 1) % len(m.CardInsertInputs)
 }
 
-// prevInput focuses the previous input field
+// PrevInput focuses the previous input field
 func (m *CardModel) PrevInput() {
 	m.FocusedCard--
 	// Wrap around
 	if m.FocusedCard < 0 {
-		m.FocusedCard = len(m.CardInputs) - 1
+		m.FocusedCard = len(m.CardInsertInputs) - 1
 	}
 }

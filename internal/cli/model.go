@@ -10,7 +10,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli/tab"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"github.com/mishankoGO/GophKeeper/internal/security"
+	"strings"
 )
 
 type Model struct {
@@ -28,12 +28,12 @@ type Model struct {
 	Client        *client.Client
 }
 
-func InitialModel(client *client.Client, security *security.Security) *Model {
+func InitialModel(client *client.Client) *Model {
 
 	loginModel := login.NewLoginModel(client)
 	registerModel := login.NewRegisterModel(client)
 	tabModel := tab.NewTabModel()
-	cardModel := card.NewCardModel(client, security)
+	cardModel := card.NewCardModel(client)
 	indexModel := index.NewIndexModel()
 	dataTypeModel := datatype.NewDataTypeModel()
 
@@ -98,7 +98,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Step = m.DataTypeModel.Step
 		m.Finish = m.DataTypeModel.Finish
 		return m, cmd
-	} else if m.Step == "Card_INSERT" {
+	} else if strings.Split(m.Step, "_")[0] == "Card" {
+		m.CardModel.Step = m.Step
+		m.CardModel.User = m.User
 		_, cmd := m.CardModel.Update(msg)
 		//m.CardModel = *cardModel
 		m.CardModel.User = m.User
@@ -118,7 +120,7 @@ func (m Model) View() string {
 		return m.TabModel.View()
 	} else if m.Step == "DataTypes" {
 		return m.DataTypeModel.View()
-	} else if m.Step == "Card_INSERT" {
+	} else if strings.Split(m.Step, "_")[0] == "Card" {
 		return m.CardModel.View()
 	}
 	return m.IndexModel.View()

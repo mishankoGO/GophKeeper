@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,7 +22,7 @@ import (
 func NewCards(repo interfaces.Repository, security *security.Security) *Cards {
 	return &Cards{
 		Repo:     repo,
-		Security: *security,
+		Security: security,
 	}
 }
 
@@ -29,7 +30,7 @@ func NewCards(repo interfaces.Repository, security *security.Security) *Cards {
 type Cards struct {
 	pb.UnimplementedCardsServer
 	Repo     interfaces.Repository // data storage
-	Security security.Security     // cipher component
+	Security *security.Security    // cipher component
 }
 
 // Insert method encrypts and inserts data to db.
@@ -82,13 +83,15 @@ func (c *Cards) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetCardRespons
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting card: %v", err)
 	}
-
 	// decrypt data
 	decData, err := c.Security.DecryptData(card.Card)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	}
 
 	// set decrypted card to Card
 	card.Card = bytes.Trim(decData, "\"\n")
-
+	fmt.Println(card)
 	if card.Meta == nil {
 		card.Meta = map[string]string{}
 	}

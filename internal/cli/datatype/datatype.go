@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"strings"
+)
+
+var (
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle.Copy()
 )
 
 var dataTypes = []string{"GET", "UPDATE", "INSERT", "DELETE"}
@@ -33,6 +39,9 @@ func (m *DataTypeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "esc":
 			m.Finish = true
 			return m, tea.Quit
+
+		case "ctrl+z":
+			m.Step = "Tab"
 
 		case "enter":
 			// Send the choice on the channel and exit.
@@ -68,7 +77,7 @@ func (m DataTypeModel) View() string {
 		s.WriteString(dataTypes[i])
 		s.WriteString("\n")
 	}
-	s.WriteString("\n(press ctrl+c to quit)\n")
+	s.WriteString(helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"))
 
 	return s.String()
 }

@@ -16,14 +16,13 @@ import (
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle.Copy()
-	focusedButton       = focusedStyle.Copy().Render("[ Submit ]")
-	blurredButton       = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-	cursorStyle         = focusedStyle.Copy()
+	focusedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	noStyle       = lipgloss.NewStyle()
+	helpStyle     = blurredStyle.Copy()
+	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
+	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+	cursorStyle   = focusedStyle.Copy()
 )
 
 type LoginModel struct {
@@ -129,18 +128,6 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+z":
 			m.Step = "index"
-
-		// Change cursor mode
-		case "ctrl+r":
-			m.RegisterCursorMode++
-			if m.RegisterCursorMode > cursor.CursorHide {
-				m.RegisterCursorMode = cursor.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.RegisterInputs))
-			for i := range m.RegisterInputs {
-				cmds[i] = m.RegisterInputs[i].Cursor.SetMode(m.RegisterCursorMode)
-			}
-			return m, tea.Batch(cmds...)
 
 		// Set focus to next input
 		case "tab", "shift+tab", "enter", "up", "down":
@@ -255,9 +242,7 @@ func (m RegisterModel) View() string {
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
-	b.WriteString(helpStyle.Render("cursor mode is "))
-	b.WriteString(cursorModeHelpStyle.Render(m.RegisterCursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
+	b.WriteString(helpStyle.Render("ctrl+c to quit | ctrl+z to return"))
 
 	return b.String()
 }
@@ -279,18 +264,6 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+z":
 			m.Step = "index"
 			return m, nil
-
-		// Change cursor mode
-		case "ctrl+r":
-			m.LoginCursorMode++
-			if m.LoginCursorMode > cursor.CursorHide {
-				m.LoginCursorMode = cursor.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.LoginInputs))
-			for i := range m.LoginInputs {
-				cmds[i] = m.LoginInputs[i].Cursor.SetMode(m.LoginCursorMode)
-			}
-			return m, tea.Batch(cmds...)
 
 		// Set focus to next input
 		case "tab", "shift+tab", "enter", "up", "down":
@@ -404,9 +377,7 @@ func (m LoginModel) View() string {
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
-	b.WriteString(helpStyle.Render("cursor mode is "))
-	b.WriteString(cursorModeHelpStyle.Render(m.LoginCursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
+	b.WriteString(helpStyle.Render("ctrl+c to quit | ctrl+z to return"))
 
 	return b.String()
 }
