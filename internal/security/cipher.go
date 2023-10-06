@@ -6,7 +6,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
+	mrand "math/rand"
+	//"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 )
@@ -14,7 +15,7 @@ import (
 // generateRandom generates random sequence.
 func generateRandom(size int) ([]byte, error) {
 	b := make([]byte, size)
-	_, err := rand.Read(b)
+	_, err := mrand.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error creating random sequence: %w", err)
 	}
@@ -60,14 +61,14 @@ func NewSecurity(keyPhrase string) (*Security, error) {
 
 // EncryptData method ciphers input data.
 func (s *Security) EncryptData(buf bytes.Buffer) []byte {
-	fmt.Println("encrypt nonce: ", s.nonce, s.key)
+	//fmt.Println("encrypt nonce: ", s.nonce, s.key)
 	encData := s.aesgcm.Seal(nil, s.nonce, buf.Bytes(), nil)
 	return encData
 }
 
 // DecryptData method deciphers input data.
 func (s *Security) DecryptData(encData []byte) ([]byte, error) {
-	fmt.Println("decrypt nonce: ", s.nonce, s.key)
+	//fmt.Println("decrypt nonce: ", s.nonce, s.key)
 	decData, err := s.aesgcm.Open(nil, s.nonce, encData, nil) // расшифровываем
 	if err != nil {
 		return nil, fmt.Errorf("error decrypting data: %w", err)

@@ -6,8 +6,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -45,14 +43,10 @@ func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileReque
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 	res := &pb.InsertResponse{IsInserted: false}
 
 	// marshall into bytes
-	err = encoder.Encode(string(file))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding binary file: %v", err)
-	}
+	buf.Write(file)
 
 	// encrypt data
 	encData := bf.Security.EncryptData(buf)
@@ -121,13 +115,9 @@ func (bf *BinaryFiles) Update(ctx context.Context, req *pb.UpdateBinaryFileReque
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 
 	// marshall into bytes
-	err = encoder.Encode(string(file))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding binary file: %v", err)
-	}
+	buf.Write(file)
 
 	// encrypt data
 	encData := bf.Security.EncryptData(buf)

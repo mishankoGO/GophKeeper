@@ -11,7 +11,6 @@ package clients
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	"github.com/mishankoGO/GophKeeper/internal/security"
@@ -48,11 +47,8 @@ func (c *CardsClient) Insert(ctx context.Context, req *pb.InsertCardRequest) (*p
 
 	// encrypt data
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	err = encoder.Encode(string(card.Card))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding card: %v", err)
-	}
+	buf.Write(card.Card)
+
 	encData := c.Security.EncryptData(buf)
 
 	// set encrypted card as Card
@@ -64,11 +60,11 @@ func (c *CardsClient) Insert(ctx context.Context, req *pb.InsertCardRequest) (*p
 	}
 
 	if !c.offline {
+		req.Card.Card = encData
 		resp, err := c.service.Insert(ctx, req)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error inserting card: %v", err)
 		}
-
 		return resp, nil
 	}
 
@@ -102,6 +98,19 @@ func (c *CardsClient) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetCardR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting card information: %v", err)
 	}
+
+	// decrypt data
+	cc := resp.Card.Card
+	decData, err := c.Security.DecryptData(cc)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	}
+
+	// set decrypted card to card
+	resp.Card.Card = bytes.Trim(decData, "\"\n")
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error retrieving card: %v", err)
+	}
 	return resp, nil
 }
 
@@ -114,11 +123,8 @@ func (c *CardsClient) Update(ctx context.Context, req *pb.UpdateCardRequest) (*p
 
 	// encrypt data
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	err = encoder.Encode(string(mCard.Card))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding card: %v", err)
-	}
+	buf.Write(mCard.Card)
+
 	encData := c.Security.EncryptData(buf)
 
 	// set encrypted card as Card
@@ -130,11 +136,11 @@ func (c *CardsClient) Update(ctx context.Context, req *pb.UpdateCardRequest) (*p
 	}
 
 	if !c.offline {
+		req.Card.Card = encData
 		resp, err := c.service.Update(ctx, req)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error updating card information: %v", err)
 		}
-
 		return resp, nil
 	}
 
@@ -160,6 +166,28 @@ func (c *CardsClient) Delete(ctx context.Context, req *pb.DeleteCardRequest) (*p
 }
 
 // List method to list all cards.
-func (c *CardsClient) List() {
+func (c *CardsClient) List(ctx context.Context) (*pb.ListCardResponse, error) {
+	cards, err := c.repo.ListC()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error listing cards: %v", err)
+	}
 
+	pbCards := make([]*pb.Card, len(*cards))
+	for _, card := range *cards {
+		pbCard, err := converters.CardToPBCard(&card)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error converting card: %v", err)
+		}
+		// decrypt data
+		decData, err := c.Security.DecryptData(pbCard.Card)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+		}
+
+		// set decrypted card to Card
+		pbCard.Card = bytes.Trim(decData, "\"\n")
+		pbCards = append(pbCards, pbCard)
+	}
+	resp := &pb.ListCardResponse{Cards: pbCards}
+	return resp, err
 }

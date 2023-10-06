@@ -23,6 +23,7 @@ const (
 	Cards_Get_FullMethodName    = "/api.Cards/Get"
 	Cards_Update_FullMethodName = "/api.Cards/Update"
 	Cards_Delete_FullMethodName = "/api.Cards/Delete"
+	Cards_List_FullMethodName   = "/api.Cards/List"
 )
 
 // CardsClient is the client API for Cards service.
@@ -33,6 +34,7 @@ type CardsClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetCardResponse, error)
 	Update(ctx context.Context, in *UpdateCardRequest, opts ...grpc.CallOption) (*UpdateCardResponse, error)
 	Delete(ctx context.Context, in *DeleteCardRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	List(ctx context.Context, in *ListCardRequest, opts ...grpc.CallOption) (*ListCardResponse, error)
 }
 
 type cardsClient struct {
@@ -79,6 +81,15 @@ func (c *cardsClient) Delete(ctx context.Context, in *DeleteCardRequest, opts ..
 	return out, nil
 }
 
+func (c *cardsClient) List(ctx context.Context, in *ListCardRequest, opts ...grpc.CallOption) (*ListCardResponse, error) {
+	out := new(ListCardResponse)
+	err := c.cc.Invoke(ctx, Cards_List_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CardsServer is the server API for Cards service.
 // All implementations must embed UnimplementedCardsServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type CardsServer interface {
 	Get(context.Context, *GetRequest) (*GetCardResponse, error)
 	Update(context.Context, *UpdateCardRequest) (*UpdateCardResponse, error)
 	Delete(context.Context, *DeleteCardRequest) (*DeleteResponse, error)
+	List(context.Context, *ListCardRequest) (*ListCardResponse, error)
 	mustEmbedUnimplementedCardsServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedCardsServer) Update(context.Context, *UpdateCardRequest) (*Up
 }
 func (UnimplementedCardsServer) Delete(context.Context, *DeleteCardRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedCardsServer) List(context.Context, *ListCardRequest) (*ListCardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedCardsServer) mustEmbedUnimplementedCardsServer() {}
 
@@ -191,6 +206,24 @@ func _Cards_Delete_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Cards_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardsServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cards_List_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardsServer).List(ctx, req.(*ListCardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Cards_ServiceDesc is the grpc.ServiceDesc for Cards service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var Cards_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _Cards_Delete_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _Cards_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

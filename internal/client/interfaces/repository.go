@@ -25,6 +25,7 @@ type BinaryFilesStorage interface {
 	GetBF(name string) (*binary_files.Files, error)
 	UpdateBF(bf *binary_files.Files) (*binary_files.Files, error)
 	DeleteBF(name string) error
+	ListBF() (*[]binary_files.Files, error)
 }
 
 // LogPassesStorage interface is responsible for storing, retrieving, updating and deleting logpasses from database.
@@ -34,6 +35,7 @@ type LogPassesStorage interface {
 	GetLP(name string) (*log_passes.LogPasses, error)
 	UpdateLP(lp *log_passes.LogPasses) (*log_passes.LogPasses, error)
 	DeleteLP(name string) error
+	ListLP() (*[]log_passes.LogPasses, error)
 }
 
 // CardsStorage interface is responsible for storing, retrieving, updating and deleting cards from database.
@@ -42,6 +44,7 @@ type CardsStorage interface {
 	GetC(name string) (*cards.Cards, error)
 	UpdateC(c *cards.Cards) (*cards.Cards, error)
 	DeleteC(name string) error
+	ListC() (*[]cards.Cards, error)
 }
 
 // TextsStorage interface is responsible for storing, retrieving, updating and deleting texts from database.
@@ -50,6 +53,7 @@ type TextsStorage interface {
 	GetT(name string) (*texts.Texts, error)
 	UpdateT(t *texts.Texts) (*texts.Texts, error)
 	DeleteT(name string) error
+	ListT() (*[]texts.Texts, error)
 }
 
 // UsersStorage interface is responsible for registering, login and inserting user to database.

@@ -6,8 +6,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -45,23 +43,16 @@ func (lp *LogPasses) Insert(ctx context.Context, req *pb.InsertLogPassRequest) (
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 	res := &pb.InsertResponse{IsInserted: false}
 
 	// marshal into bytes
-	err = encoder.Encode(string(login))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding login: %v", err)
-	}
+	buf.Write(login)
 
 	// encrypt login
 	encLogin := lp.Security.EncryptData(buf)
 
 	// marshal into bytes
-	err = encoder.Encode(string(password))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding password: %v", err)
-	}
+	buf.Write(password)
 
 	// encrypt password
 	encPassword := lp.Security.EncryptData(buf)
@@ -136,23 +127,18 @@ func (lp *LogPasses) Update(ctx context.Context, req *pb.UpdateLogPassRequest) (
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 
 	// marshall into bytes
-	err = encoder.Encode(string(login))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding login: %v", err)
-	}
+	buf.Write(login)
+
 	// encrypt login
 	encLogin := lp.Security.EncryptData(buf)
 
 	buf.Reset()
 
 	// marshall into bytes
-	err = encoder.Encode(string(password))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding password: %v", err)
-	}
+	buf.Write(password)
+
 	// encrypt password
 	encPassword := lp.Security.EncryptData(buf)
 

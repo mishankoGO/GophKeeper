@@ -45,13 +45,13 @@ func NewClient(conf *config.Config, repo interfaces.Repository, security *securi
 		cardsClient := clients.NewCardsClient(nil, repo, security)
 
 		// connect texts client
-		textsClient := clients.NewTextsClient(nil, repo)
+		textsClient := clients.NewTextsClient(nil, repo, security)
 
 		// connect binary files client
-		bfClient := clients.NewBinaryFilesClient(nil, repo)
+		bfClient := clients.NewBinaryFilesClient(nil, repo, security)
 
 		// connect log pass client
-		lpClient := clients.NewLogPassesClient(nil, repo)
+		lpClient := clients.NewLogPassesClient(nil, repo, security)
 
 		return &Client{
 			UsersClient:       usersClient,
@@ -89,13 +89,13 @@ func NewClient(conf *config.Config, repo interfaces.Repository, security *securi
 		cardsClient := clients.NewCardsClient(conn2, repo, security)
 
 		// connect texts client
-		textsClient := clients.NewTextsClient(conn2, repo)
+		textsClient := clients.NewTextsClient(conn2, repo, security)
 
 		// connect binary files client
-		bfClient := clients.NewBinaryFilesClient(conn2, repo)
+		bfClient := clients.NewBinaryFilesClient(conn2, repo, security)
 
 		// connect log pass client
-		lpClient := clients.NewLogPassesClient(conn2, repo)
+		lpClient := clients.NewLogPassesClient(conn2, repo, security)
 
 		// create connections array
 		conns := []*grpc.ClientConn{conn1, conn2}

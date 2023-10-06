@@ -6,9 +6,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -46,14 +43,10 @@ func (c *Cards) Insert(ctx context.Context, req *pb.InsertCardRequest) (*pb.Inse
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 	res := &pb.InsertResponse{IsInserted: false}
 
 	// marshall into bytes
-	err = encoder.Encode(string(card_))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding card: %v", err)
-	}
+	buf.Write(card_)
 
 	// encrypt data
 	encData := c.Security.EncryptData(buf)
@@ -83,6 +76,7 @@ func (c *Cards) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetCardRespons
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting card: %v", err)
 	}
+
 	// decrypt data
 	decData, err := c.Security.DecryptData(card.Card)
 	if err != nil {
@@ -91,10 +85,6 @@ func (c *Cards) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetCardRespons
 
 	// set decrypted card to Card
 	card.Card = bytes.Trim(decData, "\"\n")
-	fmt.Println(card)
-	if card.Meta == nil {
-		card.Meta = map[string]string{}
-	}
 
 	// convert card to proto card
 	pbCard, err := converters.CardToPBCard(card)
@@ -124,13 +114,9 @@ func (c *Cards) Update(ctx context.Context, req *pb.UpdateCardRequest) (*pb.Upda
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 
 	// marshall into bytes
-	err = encoder.Encode(string(card_))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding card: %v", err)
-	}
+	buf.Write(card_)
 
 	// encrypt data
 	encData := c.Security.EncryptData(buf)

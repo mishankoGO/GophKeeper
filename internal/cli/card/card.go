@@ -166,7 +166,7 @@ func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if m.FocusedCard == len(m.CardGetInputs)-1 {
-				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
 				name_ := m.CardGetInputs[name].Value()
@@ -176,15 +176,25 @@ func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 				getResp, err := m.Client.CardsClient.Get(ctx, &pb.GetRequest{User: pbUser, Name: name_})
 				if err != nil {
 					m.Err = err
-					return m, nil
+					m.FocusedCard = 0
+					cmds = make([]tea.Cmd, len(m.CardGetInputs))
+					for i := 0; i <= len(m.CardGetInputs)-1; i++ {
+						if i == m.FocusedCard {
+							cmds[i] = m.CardGetInputs[i].Focus()
+							m.CardGetInputs[i].Reset()
+							continue
+						}
+						m.CardGetInputs[i].Blur()
+						m.CardGetInputs[i].Reset()
+					}
+					m.GetResult = ""
+					return m, tea.Batch(cmds...)
 				}
 
-				m.CardGetInputs[name].Reset()
 				m.GetResult = string(getResp.GetCard().Card)
 				m.Step = "Card_GET"
-				m.CardGetInputs[name].Reset()
-				m.FocusedCard = 0
-				return m, tea.ClearScreen
+				m.Err = nil
+				return m, nil
 			}
 			m.NextInput()
 		case tea.KeyCtrlZ:
@@ -197,12 +207,20 @@ func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		case tea.KeyTab, tea.KeyCtrlN:
 			m.NextInput()
 		}
-		for i := range m.CardGetInputs {
-			m.CardGetInputs[i].Blur()
-		}
-		m.CardGetInputs[m.FocusedCard].Focus()
 
+		cmds = make([]tea.Cmd, len(m.CardGetInputs))
+		for i := 0; i <= len(m.CardGetInputs)-1; i++ {
+			if i == m.FocusedCard {
+				cmds[i] = m.CardGetInputs[i].Focus()
+				continue
+			}
+			m.CardGetInputs[i].Blur()
+			m.CardGetInputs[i].Reset()
+		}
+		m.GetResult = ""
 	}
+
+	cmds = make([]tea.Cmd, len(m.CardGetInputs))
 	for i := range m.CardGetInputs {
 		m.CardGetInputs[i], cmds[i] = m.CardGetInputs[i].Update(msg)
 	}
@@ -216,7 +234,7 @@ func updateCardDelete(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if m.FocusedCard == len(m.CardDeleteInputs)-1 {
-				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
 				name_ := m.CardDeleteInputs[name].Value()
@@ -226,15 +244,24 @@ func updateCardDelete(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 				deleteResp, err := m.Client.CardsClient.Delete(ctx, &pb.DeleteCardRequest{User: pbUser, Name: name_})
 				if err != nil {
 					m.Err = err
-					return m, nil
+					m.FocusedCard = 0
+					cmds = make([]tea.Cmd, len(m.CardDeleteInputs))
+					for i := 0; i <= len(m.CardDeleteInputs)-1; i++ {
+						if i == m.FocusedCard {
+							cmds[i] = m.CardDeleteInputs[i].Focus()
+							m.CardDeleteInputs[i].Reset()
+							m.DeleteResult = false
+							continue
+						}
+						m.CardDeleteInputs[i].Blur()
+						m.CardDeleteInputs[i].Reset()
+					}
+					return m, tea.Batch(cmds...)
 				}
 
-				m.CardDeleteInputs[name].Reset()
 				m.DeleteResult = deleteResp.GetOk()
 				m.Step = "Card_DELETE"
-				m.CardDeleteInputs[name].Reset()
-				m.FocusedCard = 0
-				return m, tea.ClearScreen
+				return m, nil
 			}
 			m.NextInput()
 		case tea.KeyCtrlZ:
@@ -247,12 +274,21 @@ func updateCardDelete(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		case tea.KeyTab, tea.KeyCtrlN:
 			m.NextInput()
 		}
-		for i := range m.CardDeleteInputs {
+		cmds = make([]tea.Cmd, len(m.CardDeleteInputs))
+		for i := 0; i <= len(m.CardDeleteInputs)-1; i++ {
+			if i == m.FocusedCard {
+				cmds[i] = m.CardDeleteInputs[i].Focus()
+				m.CardGetInputs[i].Reset()
+				continue
+			}
 			m.CardDeleteInputs[i].Blur()
+			m.CardDeleteInputs[i].Reset()
 		}
-		m.CardDeleteInputs[m.FocusedCard].Focus()
+		m.DeleteResult = false
 
 	}
+
+	cmds = make([]tea.Cmd, len(m.CardDeleteInputs))
 	for i := range m.CardDeleteInputs {
 		m.CardDeleteInputs[i], cmds[i] = m.CardDeleteInputs[i].Update(msg)
 	}
@@ -266,7 +302,7 @@ func updateCardInsert(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if m.FocusedCard == len(m.CardInsertInputs)-1 {
-				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
 				name_ := m.CardInsertInputs[name].Value()
@@ -281,22 +317,40 @@ func updateCardInsert(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 				pbCard, err := converters.CardToPBCard(card)
 				if err != nil {
 					m.Err = err
-					return m, nil
+					m.FocusedCard = 0
+					cmds = make([]tea.Cmd, len(m.CardInsertInputs))
+					for i := 0; i <= len(m.CardInsertInputs)-1; i++ {
+						if i == m.FocusedCard {
+							cmds[i] = m.CardInsertInputs[i].Focus()
+							m.CardInsertInputs[i].Reset()
+							continue
+						}
+						m.CardInsertInputs[i].Blur()
+						m.CardInsertInputs[i].Reset()
+					}
+					return m, tea.Batch(cmds...)
 				}
 
-				_, err = m.Client.CardsClient.Insert(ctx, &pb.InsertCardRequest{User: pbUser, Card: pbCard})
+				insertResp, err := m.Client.CardsClient.Insert(ctx, &pb.InsertCardRequest{User: pbUser, Card: pbCard})
 				if err != nil {
 					m.Err = err
-					return m, nil
+					m.FocusedCard = 0
+					cmds = make([]tea.Cmd, len(m.CardInsertInputs))
+					for i := 0; i <= len(m.CardInsertInputs)-1; i++ {
+						if i == m.FocusedCard {
+							cmds[i] = m.CardInsertInputs[i].Focus()
+							m.CardInsertInputs[i].Reset()
+							continue
+						}
+						m.CardInsertInputs[i].Blur()
+						m.CardInsertInputs[i].Reset()
+					}
+					return m, tea.Batch(cmds...)
 				}
-				m.CardInsertInputs[name].Reset()
-				m.CardInsertInputs[ccn].Reset()
-				m.CardInsertInputs[exp].Reset()
-				m.CardInsertInputs[cvv].Reset()
 
+				m.InsertResult = insertResp.GetIsInserted()
 				m.Step = "Card_INSERT"
-				m.FocusedCard = 0
-				return m, tea.ClearScreen
+				return m, nil
 			}
 			m.NextInput()
 		case tea.KeyCtrlZ:
@@ -309,11 +363,20 @@ func updateCardInsert(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		case tea.KeyTab, tea.KeyCtrlN:
 			m.NextInput()
 		}
-		for i := range m.CardInsertInputs {
+
+		cmds = make([]tea.Cmd, len(m.CardInsertInputs))
+		for i := 0; i <= len(m.CardInsertInputs)-1; i++ {
+			if i == m.FocusedCard {
+				cmds[i] = m.CardInsertInputs[i].Focus()
+				continue
+			}
 			m.CardInsertInputs[i].Blur()
+			//m.CardInsertInputs[i].Reset()
 		}
-		m.CardInsertInputs[m.FocusedCard].Focus()
+		m.InsertResult = false
 	}
+
+	cmds = make([]tea.Cmd, len(m.CardInsertInputs))
 	for i := range m.CardInsertInputs {
 		m.CardInsertInputs[i], cmds[i] = m.CardInsertInputs[i].Update(msg)
 	}
@@ -342,24 +405,41 @@ func updateCardUpdate(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 				pbCard, err := converters.CardToPBCard(card)
 				if err != nil {
 					m.Err = err
-					return m, nil
+					m.FocusedCard = 0
+					cmds := make([]tea.Cmd, len(m.CardUpdateInputs))
+					for i := 0; i <= len(m.CardUpdateInputs)-1; i++ {
+						if i == m.FocusedCard {
+							cmds[i] = m.CardUpdateInputs[i].Focus()
+							m.CardUpdateInputs[i].Reset()
+							continue
+						}
+						m.CardUpdateInputs[i].Blur()
+						m.CardUpdateInputs[i].Reset()
+					}
+					return m, tea.Batch(cmds...)
 				}
 
-				_, err = m.Client.CardsClient.Update(ctx, &pb.UpdateCardRequest{User: pbUser, Card: pbCard})
+				updateResp, err := m.Client.CardsClient.Update(ctx, &pb.UpdateCardRequest{User: pbUser, Card: pbCard})
 				if err != nil {
 					m.Err = err
-					return m, nil
+					m.FocusedCard = 0
+					cmds := make([]tea.Cmd, len(m.CardUpdateInputs))
+					for i := 0; i <= len(m.CardUpdateInputs)-1; i++ {
+						if i == m.FocusedCard {
+							cmds[i] = m.CardUpdateInputs[i].Focus()
+							m.CardUpdateInputs[i].Reset()
+							continue
+						}
+						m.CardUpdateInputs[i].Blur()
+						m.CardUpdateInputs[i].Reset()
+					}
+					return m, tea.Batch(cmds...)
 				}
-				m.CardUpdateInputs[name].Reset()
-				m.CardUpdateInputs[ccn].Reset()
-				m.CardUpdateInputs[exp].Reset()
-				m.CardUpdateInputs[cvv].Reset()
-
-				m.FocusedCard = 0
 
 				m.Step = "Card_UPDATE"
+				m.UpdateResult = updateResp.GetCard().String()
 
-				return m, tea.ClearScreen
+				return m, nil
 			}
 			m.NextInput()
 		case tea.KeyCtrlZ:
@@ -372,11 +452,17 @@ func updateCardUpdate(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 		case tea.KeyTab, tea.KeyCtrlN:
 			m.NextInput()
 		}
-		for i := range m.CardUpdateInputs {
+		cmds = make([]tea.Cmd, len(m.CardUpdateInputs))
+		for i := 0; i <= len(m.CardUpdateInputs)-1; i++ {
+			if i == m.FocusedCard {
+				cmds[i] = m.CardUpdateInputs[i].Focus()
+				continue
+			}
 			m.CardUpdateInputs[i].Blur()
 		}
-		m.CardUpdateInputs[m.FocusedCard].Focus()
 	}
+
+	cmds = make([]tea.Cmd, len(m.CardUpdateInputs))
 	for i := range m.CardUpdateInputs {
 		m.CardUpdateInputs[i], cmds[i] = m.CardUpdateInputs[i].Update(msg)
 	}
@@ -419,15 +505,11 @@ func viewCardGet(m CardModel) string {
 %s
 %s
 
-%s
-%s
-
 %s %s
 %s %s
 
 %s`,
-			inputStyle.Width(30).Render("Card Name"),
-			m.CardGetInputs[name].View(),
+
 			inputStyle.Render("Card Number"),
 			card[0],
 			inputStyle.Width(6).Render("EXP"),
@@ -437,6 +519,7 @@ func viewCardGet(m CardModel) string {
 			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 		) + "\n"
 		b.WriteString(view)
+		return b.String()
 	}
 	b.WriteString(view)
 	return b.String()
@@ -465,19 +548,15 @@ func viewCardDelete(m CardModel) string {
 			`Enter card name:
 
 %s
-%s
-
-%s
 %v
 
 %s`,
-			inputStyle.Width(30).Render("Card Name"),
-			m.CardGetInputs[name].View(),
 			inputStyle.Render("Card Deleted"),
 			res,
 			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 		) + "\n"
 		b.WriteString(view)
+		return b.String()
 	}
 	b.WriteString(view)
 	return b.String()
@@ -518,7 +597,32 @@ func viewCardInsert(m CardModel) string {
 		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 	) + "\n"
 	b.WriteString(view)
+	return b.String()
 
+	if m.InsertResult {
+		res := m.InsertResult
+
+		view := fmt.Sprintf(
+			`Enter new card info:
+
+ %s
+ %s
+
+ %s
+ 
+ %s
+
+ %s
+`,
+			inputStyle.Width(30).Render("Card Name"),
+			m.CardInsertInputs[name].View(),
+			res,
+			continueStyle.Render("Continue ->"),
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+		) + "\n"
+		b.WriteString(view)
+		return b.String()
+	}
 	return b.String()
 }
 

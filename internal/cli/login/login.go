@@ -166,7 +166,6 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				user := converters.PBUserToUser(regResp.GetUser())
 				m.User = user
-				m.Finish = true
 				m.Step = "Login"
 				return m, nil
 			}
