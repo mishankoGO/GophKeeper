@@ -5,7 +5,7 @@
 // CardsClient to operate with bank cards.
 // LogPassesClient to operate with log passes.
 // TextsClient to operate with texts.
-// BinaryFilesClient to operate with binary files.
+// LogPassesClient to operate with log passes.
 package clients
 
 import (
@@ -14,7 +14,9 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 	"github.com/mishankoGO/GophKeeper/internal/security"
+	"github.com/mishankoGO/GophKeeper/pkg/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -191,32 +193,155 @@ func (c *LogPassesClient) Delete(ctx context.Context, req *pb.DeleteLogPassReque
 }
 
 // List method to list all log passes.
-func (c *LogPassesClient) List(ctx context.Context) (*pb.ListLogPassResponse, error) {
+func (c *LogPassesClient) List(ctx context.Context, req *pb.ListLogPassRequest) (*pb.ListLogPassResponse, []*log_passes.LogPasses, error) {
 	lps, err := c.repo.ListLP()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error listing log passes: %v", err)
+		return nil, nil, status.Errorf(codes.Internal, "error listing log passes: %v", err)
 	}
 
-	pbLPs := make([]*pb.LogPass, len(*lps))
-	for _, lp := range *lps {
-		pbLP, err := converters.LogPassToPBLogPass(&lp)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error converting log pass: %v", err)
+	//pbLPs := make([]*pb.LogPass, len(lps))
+	//for _, lp := range lps {
+	//	pbLP, err := converters.LogPassToPBLogPass(lp)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error converting log pass: %v", err)
+	//	}
+	//	// decrypt data
+	//	decLogin, err := c.Security.DecryptData(pbLP.Login)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	//	}
+	//	decPass, err := c.Security.DecryptData(pbLP.Pass)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	//	}
+	//
+	//	pbLP.Login = bytes.Trim(decLogin, "\"\n")
+	//	pbLP.Pass = bytes.Trim(decPass, "\"\n")
+	//	pbLPs = append(pbLPs, pbLP)
+	//}
+
+	resp, err := c.service.List(ctx, req)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "error listing log passes: %v", err)
+	}
+	return resp, lps, err
+}
+
+// Sync method to sync log passes between dbs.
+func (c *LogPassesClient) Sync(ctx context.Context, req *pb.ListLogPassRequest) error {
+	serverLPs, clientLPs, err := c.List(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	// arrays of names for future syncing
+	clientNames := make([]string, len(clientLPs))
+	serverNames := make([]string, len(serverLPs.GetLogPasses()))
+
+	// flag which shows which db has the latest data.
+	// if flag set to "server", it means server has fresher data.
+	dataPrimary := "client"
+
+	// update cycle
+	for _, clp := range clientLPs {
+		cname := clp.Name
+		clientNames = append(clientNames, cname)
+		for _, slp := range serverLPs.GetLogPasses() {
+			sname := slp.GetName()
+			serverNames = append(serverNames, sname)
+
+			// update common log passes
+			if sname == cname {
+				if clp.UpdatedAt.After(slp.UpdatedAt.AsTime()) {
+					// convert log pass to proto log pass
+					protoLP, err := converters.LogPassToPBLogPass(clp)
+					if err != nil {
+						return err
+					}
+
+					// update server log pass
+					reqS := &pb.UpdateLogPassRequest{User: req.GetUser(), LogPass: protoLP}
+					_, err = c.service.Update(ctx, reqS)
+					if err != nil {
+						return err
+					}
+					dataPrimary = "client"
+				} else {
+					// convert proto log pass to log pass
+					lp, err := converters.PBLogPassToLogPass(req.GetUser().GetUserId(), slp)
+					if err != nil {
+						return err
+					}
+
+					// update client log pass
+					_, err = c.repo.UpdateLP(lp)
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
-		// decrypt data
-		decLogin, err := c.Security.DecryptData(pbLP.Login)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
-		}
-		decPass, err := c.Security.DecryptData(pbLP.Pass)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	}
+
+	if dataPrimary == "server" {
+		// insert missing server log passes to client
+		for _, slp := range serverLPs.GetLogPasses() {
+			// convert proto log pass to model log pass
+			lp, err := converters.PBLogPassToLogPass(req.GetUser().GetUserId(), slp)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(slp.Name, clientNames) {
+				// insert missing log pass to client db
+				err = c.repo.InsertLP(lp)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
-		pbLP.Login = bytes.Trim(decLogin, "\"\n")
-		pbLP.Pass = bytes.Trim(decPass, "\"\n")
-		pbLPs = append(pbLPs, pbLP)
+		// delete log passes
+		for _, clp := range clientLPs {
+			if !util.StringInSlice(clp.Name, serverNames) {
+				// delete log passes absent in server
+				err = c.repo.DeleteLP(clp.Name)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else if dataPrimary == "client" {
+		// insert missing client log passes to log pass
+		for _, clp := range clientLPs {
+			// convert model log pass to proto log pass
+			protoLP, err := converters.LogPassToPBLogPass(clp)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(clp.Name, serverNames) {
+				// insert missing log pass to server db
+				reqS := &pb.InsertLogPassRequest{User: req.GetUser(), LogPass: protoLP}
+				_, err = c.service.Insert(ctx, reqS)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// delete log passes
+		for _, slp := range serverLPs.GetLogPasses() {
+			if !util.StringInSlice(slp.GetName(), clientNames) {
+				// delete log passes absent in client
+				resD := &pb.DeleteLogPassRequest{User: req.GetUser(), Name: slp.GetName()}
+				_, err = c.service.Delete(ctx, resD)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
-	resp := &pb.ListLogPassResponse{LogPasses: pbLPs}
-	return resp, err
+
+	return nil
 }

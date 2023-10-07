@@ -1,16 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mishankoGO/GophKeeper/config"
+	"github.com/mishankoGO/GophKeeper/internal/cli"
 	"github.com/mishankoGO/GophKeeper/internal/client"
-	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/repository/bolt"
 	"github.com/mishankoGO/GophKeeper/internal/security"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
-	"time"
+	"os"
 )
 
 const (
@@ -40,18 +39,18 @@ func main() {
 	}
 	defer client.Close()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	//ctx, cancel := context.WithCancel(context.Background())
+	//defer cancel()
 
-	//p := tea.NewProgram(cli.InitialModel(client))
+	p := tea.NewProgram(cli.InitialModel(client))
 
 	// Run returns the model as a tea.Model.
 
-	//_, err = p.Run()
-	//if err != nil {
-	//	fmt.Println("Oh no:", err)
-	//	os.Exit(1)
-	//}
+	_, err = p.Run()
+	if err != nil {
+		fmt.Println("Oh no:", err)
+		os.Exit(1)
+	}
 
 	// Assert the final tea.Model to our local model and print the choice.
 	//if m, ok := m.(cli.Model); ok && m.Finish {
@@ -60,59 +59,75 @@ func main() {
 	//fmt.Printf("Bye!")
 
 	// register
-	cred := &pb.Credential{Login: "test_user", Password: "test_pass"}
-	regResp, err := client.UsersClient.Register(ctx, &pb.RegisterRequest{Cred: cred})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("register: ", regResp)
+	//cred := &pb.Credential{Login: "test_user", Password: "test_pass"}
+	//regResp, err := client.UsersClient.Register(ctx, &pb.RegisterRequest{Cred: cred})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("register: ", regResp)
 
 	// login
-	logResp, err := client.UsersClient.Login(ctx, &pb.LoginRequest{Cred: cred})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("login: ", logResp)
+	//logResp, err := client.UsersClient.Login(ctx, &pb.LoginRequest{Cred: cred})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("login: ", logResp)
 
 	// binary file
-	bf := &pb.BinaryFile{Name: "test binary file", File: []byte("new file"), UpdatedAt: timestamppb.New(time.Now())}
-	insertbf, err := client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: logResp.GetUser(), File: bf})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("insert bf: ", insertbf)
+	//bf := &pb.BinaryFile{Name: "test binary file", File: []byte("new file"), UpdatedAt: timestamppb.New(time.Now())}
+	//insertbf, err := client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: logResp.GetUser(), File: bf})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("insert bf: ", insertbf)
 
-	bf = &pb.BinaryFile{Name: "new test binary file", File: []byte("new file"), UpdatedAt: timestamppb.New(time.Now())}
-	insertbf, err = client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: logResp.GetUser(), File: bf})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("insert bf: ", insertbf)
+	// sync
+	//user := converters.PBUserToUser(logResp.GetUser())
+	//err = client.Sync(user)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
-	getbf, err := client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: logResp.GetUser(), Name: "test binary file"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("get bf: ", string(getbf.File.File))
 	//
-	bf = &pb.BinaryFile{Name: "new test binary file", File: []byte("new new file"), UpdatedAt: timestamppb.New(time.Now())}
-	updatebf, err := client.BinaryFilesClient.Update(ctx, &pb.UpdateBinaryFileRequest{User: logResp.GetUser(), File: bf})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("update bf: ", updatebf)
+	//bf = &pb.BinaryFile{Name: "new test binary file", File: []byte("new file"), UpdatedAt: timestamppb.New(time.Now())}
+	//insertbf, err = client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: logResp.GetUser(), File: bf})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("insert bf: ", insertbf)
+	//
+	//getbf, err := client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: logResp.GetUser(), Name: "test binary file"})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("get bf: ", string(getbf.File.File))
 
-	getbf, err = client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: logResp.GetUser(), Name: "new test binary file"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("get bf: ", string(getbf.File.File))
+	//deletebf, err := client.BinaryFilesClient.Delete(ctx, &pb.DeleteBinaryFileRequest{User: logResp.GetUser(), Name: "test binary file"})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("delete bf: ", deletebf)
+	//
+	//bf = &pb.BinaryFile{Name: "new test binary file", File: []byte("new new file"), UpdatedAt: timestamppb.New(time.Now())}
+	//updatebf, err := client.BinaryFilesClient.Update(ctx, &pb.UpdateBinaryFileRequest{User: logResp.GetUser(), File: bf})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("update bf: ", updatebf)
+	//
+	//getbf, err = client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: logResp.GetUser(), Name: "new test binary file"})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//log.Println("get bf: ", string(getbf.File.File))
 
-	listbf, err := client.BinaryFilesClient.List(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(listbf)
+	//req := &pb.ListBinaryFileRequest{User: logResp.GetUser()}
+	//serverbf, clientbf, err := client.BinaryFilesClient.List(ctx, req)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//fmt.Println("server: ", serverbf)
+	//fmt.Println("client: ", clientbf)
 	//
 	//// cards
 	//card := &pb.Card{Name: "test card", Card: []byte("new card"), UpdatedAt: timestamppb.New(time.Now())}

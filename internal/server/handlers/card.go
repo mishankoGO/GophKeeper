@@ -6,6 +6,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -159,5 +160,35 @@ func (c *Cards) Delete(ctx context.Context, req *pb.DeleteCardRequest) (*pb.Dele
 
 	// set status
 	res.Ok = true
+	return res, nil
+}
+
+// List method lists all cards in db.
+func (c *Cards) List(ctx context.Context, req *pb.ListCardRequest) (*pb.ListCardResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	cs, err := c.Repo.ListC(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing cards: %w", err)
+	}
+
+	// decrypt files
+	for i, card := range cs {
+		decData, err := c.Security.DecryptData(card.Card)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting card: %v", err)
+		}
+		cs[i].Card = bytes.Trim(decData, "\"\n")
+	}
+
+	// converts model cards to proto cards
+	protoCs, err := converters.CardsToPBCards(cs)
+	if err != nil {
+		return nil, fmt.Errorf("error converting cards: %w", err)
+	}
+
+	// create response
+	res := &pb.ListCardResponse{Cards: protoCs}
 	return res, nil
 }

@@ -27,6 +27,7 @@ type BinaryFilesStorage interface {
 	GetBF(ctx context.Context, userID, name string) (*binary_files.Files, error)
 	UpdateBF(ctx context.Context, bf *binary_files.Files) (*binary_files.Files, error)
 	DeleteBF(ctx context.Context, userID, name string) error
+	ListBF(cts context.Context, userID string) ([]*binary_files.Files, error)
 }
 
 // LogPassesStorage interface is responsible for storing, retrieving, updating and deleting logpasses from database.
@@ -36,6 +37,7 @@ type LogPassesStorage interface {
 	GetLP(ctx context.Context, userID, name string) (*log_passes.LogPasses, error)
 	UpdateLP(ctx context.Context, lp *log_passes.LogPasses) (*log_passes.LogPasses, error)
 	DeleteLP(ctx context.Context, userID, name string) error
+	ListLP(cts context.Context, userID string) ([]*log_passes.LogPasses, error)
 }
 
 // CardsStorage interface is responsible for storing, retrieving, updating and deleting cards from database.
@@ -44,6 +46,7 @@ type CardsStorage interface {
 	GetC(ctx context.Context, userID, name string) (*cards.Cards, error)
 	UpdateC(ctx context.Context, c *cards.Cards) (*cards.Cards, error)
 	DeleteC(ctx context.Context, userID, name string) error
+	ListC(cts context.Context, userID string) ([]*cards.Cards, error)
 }
 
 // TextsStorage interface is responsible for storing, retrieving, updating and deleting texts from database.
@@ -52,6 +55,7 @@ type TextsStorage interface {
 	GetT(ctx context.Context, userID, name string) (*texts.Texts, error)
 	UpdateT(ctx context.Context, t *texts.Texts) (*texts.Texts, error)
 	DeleteT(ctx context.Context, userID, name string) error
+	ListT(cts context.Context, userID string) ([]*texts.Texts, error)
 }
 
 // UsersStorage interface is responsible for registering, login and inserting user to database.

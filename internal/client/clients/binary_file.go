@@ -11,10 +11,13 @@ package clients
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/binary_files"
 	"github.com/mishankoGO/GophKeeper/internal/security"
+	"github.com/mishankoGO/GophKeeper/pkg/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -167,28 +170,147 @@ func (c *BinaryFilesClient) Delete(ctx context.Context, req *pb.DeleteBinaryFile
 }
 
 // List method to list all binary files.
-func (c *BinaryFilesClient) List(ctx context.Context) (*pb.ListBinaryFileResponse, error) {
+func (c *BinaryFilesClient) List(ctx context.Context, req *pb.ListBinaryFileRequest) (*pb.ListBinaryFileResponse, []*binary_files.Files, error) {
+
+	// client repo
 	bfs, err := c.repo.ListBF()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error listing binary files: %v", err)
+		return nil, nil, status.Errorf(codes.Internal, "error listing binary files: %v", err)
 	}
 
-	pbBFs := make([]*pb.BinaryFile, len(*bfs))
-	for _, bf := range *bfs {
-		pbBF, err := converters.BinaryFileToPBBinaryFile(&bf)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error converting binary file: %v", err)
+	//for i, bf := range bfs {
+	//	// decrypt data
+	//	decData, err := c.Security.DecryptData(bf.File)
+	//	if err != nil {
+	//		return nil, nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	//	}
+	//
+	//	// set decrypted binary file to File
+	//	bfs[i].File = bytes.Trim(decData, "\"\n")
+	//}
+
+	resp, err := c.service.List(ctx, req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error listing data from server: %v", err)
+	}
+	return resp, bfs, nil
+}
+
+// Sync method to sync binary files between dbs.
+func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequest) error {
+	serverBFs, clientBFs, err := c.List(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	// arrays of names for future syncing
+	clientNames := make([]string, len(clientBFs))
+	serverNames := make([]string, len(serverBFs.GetBinaryFiles()))
+
+	// flag which shows which db has the latest data.
+	// if flag set to "server", it means server has fresher data.
+	dataPrimary := "client"
+
+	// update cycle
+	for _, cbf := range clientBFs {
+		cname := cbf.Name
+		clientNames = append(clientNames, cname)
+		for _, sbf := range serverBFs.GetBinaryFiles() {
+			sname := sbf.GetName()
+			serverNames = append(serverNames, sname)
+
+			// update common files
+			if sname == cname {
+				if cbf.UpdatedAt.After(sbf.UpdatedAt.AsTime()) {
+					// convert binary file to proto binary file
+					protoBF, err := converters.BinaryFileToPBBinaryFile(cbf)
+					if err != nil {
+						return err
+					}
+
+					// update server binary file
+					reqS := &pb.UpdateBinaryFileRequest{User: req.GetUser(), File: protoBF}
+					_, err = c.service.Update(ctx, reqS)
+					if err != nil {
+						return err
+					}
+					dataPrimary = "client"
+				} else {
+					// convert proto binary file to binary file
+					bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
+					if err != nil {
+						return err
+					}
+
+					// update client binary file
+					_, err = c.repo.UpdateBF(bf)
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
-		// decrypt data
-		decData, err := c.Security.DecryptData(pbBF.File)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	}
+
+	if dataPrimary == "server" {
+		// insert missing server binary files to client
+		for _, sbf := range serverBFs.GetBinaryFiles() {
+			// convert proto binary file to model binary file
+			bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(sbf.Name, clientNames) {
+				// insert missing binary file to client db
+				err = c.repo.InsertBF(bf)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
-		// set decrypted binary file to File
-		pbBF.File = bytes.Trim(decData, "\"\n")
-		pbBFs = append(pbBFs, pbBF)
+		// delete files
+		for _, cbf := range clientBFs {
+			if !util.StringInSlice(cbf.Name, serverNames) {
+				// delete binary files absent in server
+				err = c.repo.DeleteBF(cbf.Name)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else if dataPrimary == "client" {
+		// insert missing client binary files to binary file
+		for _, cbf := range clientBFs {
+			// convert model binary file to proto binary file
+			protoBF, err := converters.BinaryFileToPBBinaryFile(cbf)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(cbf.Name, serverNames) {
+				// insert missing binary file to server db
+				reqS := &pb.InsertBinaryFileRequest{User: req.GetUser(), File: protoBF}
+				_, err = c.service.Insert(ctx, reqS)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// delete files
+		for _, sbf := range serverBFs.GetBinaryFiles() {
+			if !util.StringInSlice(sbf.GetName(), clientNames) {
+				// delete binary files absent in client
+				resD := &pb.DeleteBinaryFileRequest{User: req.GetUser(), Name: sbf.GetName()}
+				_, err = c.service.Delete(ctx, resD)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
-	resp := &pb.ListBinaryFileResponse{BinaryFiles: pbBFs}
-	return resp, err
+
+	return nil
 }

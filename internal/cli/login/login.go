@@ -12,7 +12,6 @@ import (
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
 	"strings"
-	"time"
 )
 
 var (
@@ -128,6 +127,7 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+z":
 			m.Step = "index"
+			return m, nil
 
 		// Set focus to next input
 		case "tab", "shift+tab", "enter", "up", "down":
@@ -137,7 +137,7 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if s == "enter" && m.RegisterFocusIndex == len(m.RegisterInputs) {
 				// login
 				cred := &pb.Credential{Login: m.RegisterInputs[0].Value(), Password: m.RegisterInputs[1].Value()}
-				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
 				regResp, err := m.Client.UsersClient.Register(ctx, &pb.RegisterRequest{Cred: cred})
@@ -166,7 +166,7 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				user := converters.PBUserToUser(regResp.GetUser())
 				m.User = user
-				m.Step = "Login"
+				m.Step = "index"
 				return m, nil
 			}
 
@@ -299,7 +299,32 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Batch(cmds...)
 				}
 
+				// sync data
 				user := converters.PBUserToUser(logResp.GetUser())
+				err = m.Client.Sync(user)
+				if err != nil {
+					m.Err = err
+					m.LoginFocusIndex = 0
+					cmds := make([]tea.Cmd, len(m.LoginInputs))
+					for i := 0; i <= len(m.LoginInputs)-1; i++ {
+						if i == m.LoginFocusIndex {
+							// Set focused state
+							cmds[i] = m.LoginInputs[i].Focus()
+							m.LoginInputs[i].PromptStyle = focusedStyle
+							m.LoginInputs[i].TextStyle = focusedStyle
+							m.LoginInputs[i].Reset()
+							continue
+						}
+						// Remove focused state
+						m.LoginInputs[i].Blur()
+						m.LoginInputs[i].PromptStyle = noStyle
+						m.LoginInputs[i].TextStyle = noStyle
+						m.LoginInputs[i].Reset()
+					}
+
+					return m, tea.Batch(cmds...)
+				}
+
 				m.User = user
 				m.Finish = true
 				m.Step = "Tab"

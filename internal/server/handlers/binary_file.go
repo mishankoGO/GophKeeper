@@ -6,6 +6,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -161,5 +162,35 @@ func (bf *BinaryFiles) Delete(ctx context.Context, req *pb.DeleteBinaryFileReque
 	// set result
 	res.Ok = true
 
+	return res, nil
+}
+
+// List method lists all binary files in db.
+func (bf *BinaryFiles) List(ctx context.Context, req *pb.ListBinaryFileRequest) (*pb.ListBinaryFileResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	bfs, err := bf.Repo.ListBF(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing binary files: %w", err)
+	}
+
+	// decrypt files
+	for i, bfFile := range bfs {
+		decData, err := bf.Security.DecryptData(bfFile.File)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting binary file: %v", err)
+		}
+		bfs[i].File = bytes.Trim(decData, "\"\n")
+	}
+
+	// converts model binary files to proto binary files
+	protoBFs, err := converters.BinaryFilesToPBBinaryFiles(bfs)
+	if err != nil {
+		return nil, fmt.Errorf("error converting binary files: %w", err)
+	}
+
+	// create response
+	res := &pb.ListBinaryFileResponse{BinaryFiles: protoBFs}
 	return res, nil
 }

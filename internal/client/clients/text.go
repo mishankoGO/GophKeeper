@@ -5,7 +5,7 @@
 // CardsClient to operate with bank cards.
 // LogPassesClient to operate with log passes.
 // TextsClient to operate with texts.
-// BinaryFilesClient to operate with binary files.
+// TextsClient to operate with texts.
 package clients
 
 import (
@@ -14,7 +14,9 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/texts"
 	"github.com/mishankoGO/GophKeeper/internal/security"
+	"github.com/mishankoGO/GophKeeper/pkg/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -165,27 +167,150 @@ func (c *TextsClient) Delete(ctx context.Context, req *pb.DeleteTextRequest) (*p
 }
 
 // List method to list all texts.
-func (c *TextsClient) List(ctx context.Context) (*pb.ListTextResponse, error) {
+func (c *TextsClient) List(ctx context.Context, req *pb.ListTextRequest) (*pb.ListTextResponse, []*texts.Texts, error) {
 	ts, err := c.repo.ListT()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error listing texts: %v", err)
+		return nil, nil, status.Errorf(codes.Internal, "error listing texts: %v", err)
 	}
 
-	pbTs := make([]*pb.Text, len(*ts))
-	for _, lp := range *ts {
-		pbT, err := converters.TextToPBText(&lp)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error converting text: %v", err)
+	//pbTs := make([]*pb.Text, len(ts))
+	//for _, lp := range ts {
+	//	pbT, err := converters.TextToPBText(lp)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error converting text: %v", err)
+	//	}
+	//	// decrypt data
+	//	decData, err := c.Security.DecryptData(pbT.Text)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error decrypting text: %v", err)
+	//	}
+	//
+	//	pbT.Text = bytes.Trim(decData, "\"\n")
+	//	pbTs = append(pbTs, pbT)
+	//}
+
+	resp, err := c.service.List(ctx, req)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "error listing data from server: %v", err)
+	}
+	return resp, ts, nil
+}
+
+// Sync method to sync texts between dbs.
+func (c *TextsClient) Sync(ctx context.Context, req *pb.ListTextRequest) error {
+	serverTs, clientTs, err := c.List(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	// arrays of names for future syncing
+	clientNames := make([]string, len(clientTs))
+	serverNames := make([]string, len(serverTs.GetTexts()))
+
+	// flag which shows which db has the latest data.
+	// if flag set to "server", it means server has fresher data.
+	dataPrimary := "client"
+
+	// update cycle
+	for _, ct := range clientTs {
+		cname := ct.Name
+		clientNames = append(clientNames, cname)
+		for _, st := range serverTs.GetTexts() {
+			sname := st.GetName()
+			serverNames = append(serverNames, sname)
+
+			// update common files
+			if sname == cname {
+				if ct.UpdatedAt.After(st.UpdatedAt.AsTime()) {
+					// convert text to proto text
+					protoT, err := converters.TextToPBText(ct)
+					if err != nil {
+						return err
+					}
+
+					// update server text
+					reqS := &pb.UpdateTextRequest{User: req.GetUser(), Text: protoT}
+					_, err = c.service.Update(ctx, reqS)
+					if err != nil {
+						return err
+					}
+					dataPrimary = "client"
+				} else {
+					// convert proto text to text
+					t, err := converters.PBTextToText(req.GetUser().GetUserId(), st)
+					if err != nil {
+						return err
+					}
+
+					// update client text
+					_, err = c.repo.UpdateT(t)
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
-		// decrypt data
-		decData, err := c.Security.DecryptData(pbT.Text)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error decrypting text: %v", err)
+	}
+
+	if dataPrimary == "server" {
+		// insert missing server texts to client
+		for _, st := range serverTs.GetTexts() {
+			// convert proto text to model text
+			t, err := converters.PBTextToText(req.GetUser().GetUserId(), st)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(st.Name, clientNames) {
+				// insert missing text to client db
+				err = c.repo.InsertT(t)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
-		pbT.Text = bytes.Trim(decData, "\"\n")
-		pbTs = append(pbTs, pbT)
+		// delete files
+		for _, ct := range clientTs {
+			if !util.StringInSlice(ct.Name, serverNames) {
+				// delete texts absent in server
+				err = c.repo.DeleteT(ct.Name)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else if dataPrimary == "client" {
+		// insert missing client texts to text
+		for _, ct := range clientTs {
+			// convert model text to proto text
+			protoT, err := converters.TextToPBText(ct)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(ct.Name, serverNames) {
+				// insert missing text to server db
+				reqS := &pb.InsertTextRequest{User: req.GetUser(), Text: protoT}
+				_, err = c.service.Insert(ctx, reqS)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// delete files
+		for _, st := range serverTs.GetTexts() {
+			if !util.StringInSlice(st.GetName(), clientNames) {
+				// delete texts absent in client
+				resD := &pb.DeleteTextRequest{User: req.GetUser(), Name: st.GetName()}
+				_, err = c.service.Delete(ctx, resD)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
-	resp := &pb.ListTextResponse{Texts: pbTs}
-	return resp, err
+
+	return nil
 }

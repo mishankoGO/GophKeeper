@@ -11,9 +11,12 @@ package clients
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
+	"github.com/mishankoGO/GophKeeper/internal/models/cards"
 	"github.com/mishankoGO/GophKeeper/internal/security"
+	"github.com/mishankoGO/GophKeeper/pkg/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -166,28 +169,150 @@ func (c *CardsClient) Delete(ctx context.Context, req *pb.DeleteCardRequest) (*p
 }
 
 // List method to list all cards.
-func (c *CardsClient) List(ctx context.Context) (*pb.ListCardResponse, error) {
+func (c *CardsClient) List(ctx context.Context, req *pb.ListCardRequest) (*pb.ListCardResponse, []*cards.Cards, error) {
 	cards, err := c.repo.ListC()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error listing cards: %v", err)
+		return nil, nil, status.Errorf(codes.Internal, "error listing cards: %v", err)
 	}
 
-	pbCards := make([]*pb.Card, len(*cards))
-	for _, card := range *cards {
-		pbCard, err := converters.CardToPBCard(&card)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error converting card: %v", err)
+	//pbCards := make([]*pb.Card, len(cards))
+	//for _, card := range cards {
+	//	pbCard, err := converters.CardToPBCard(card)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error converting card: %v", err)
+	//	}
+	//	// decrypt data
+	//	decData, err := c.Security.DecryptData(pbCard.Card)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	//	}
+	//
+	//	// set decrypted card to Card
+	//	pbCard.Card = bytes.Trim(decData, "\"\n")
+	//	pbCards = append(pbCards, pbCard)
+	//}
+	resp, err := c.service.List(ctx, req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error listing data from server: %v", err)
+	}
+	return resp, cards, err
+}
+
+// Sync method to sync cards between dbs.
+func (c *CardsClient) Sync(ctx context.Context, req *pb.ListCardRequest) error {
+	serverCs, clientCs, err := c.List(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	// arrays of names for future syncing
+	clientNames := make([]string, len(clientCs))
+	serverNames := make([]string, len(serverCs.GetCards()))
+
+	// flag which shows which db has the latest data.
+	// if flag set to "server", it means server has fresher data.
+	dataPrimary := "client"
+
+	// update cycle
+	for _, cc := range clientCs {
+		cname := cc.Name
+		clientNames = append(clientNames, cname)
+		for _, sc := range serverCs.GetCards() {
+			sname := sc.GetName()
+			serverNames = append(serverNames, sname)
+
+			// update common cards
+			if sname == cname {
+				if cc.UpdatedAt.After(sc.UpdatedAt.AsTime()) {
+					// convert card to proto card
+					protoC, err := converters.CardToPBCard(cc)
+					if err != nil {
+						return err
+					}
+
+					// update server card
+					reqS := &pb.UpdateCardRequest{User: req.GetUser(), Card: protoC}
+					_, err = c.service.Update(ctx, reqS)
+					if err != nil {
+						return err
+					}
+					dataPrimary = "client"
+				} else {
+					// convert proto card to card
+					card, err := converters.PBCardToCard(req.GetUser().GetUserId(), sc)
+					if err != nil {
+						return err
+					}
+
+					// update client card
+					_, err = c.repo.UpdateC(card)
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
-		// decrypt data
-		decData, err := c.Security.DecryptData(pbCard.Card)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	}
+
+	if dataPrimary == "server" {
+		// insert missing server cards to client
+		for _, sc := range serverCs.GetCards() {
+			// convert proto card to model card
+			card, err := converters.PBCardToCard(req.GetUser().GetUserId(), sc)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(sc.Name, clientNames) {
+				// insert missing card to client db
+				err = c.repo.InsertC(card)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
-		// set decrypted card to Card
-		pbCard.Card = bytes.Trim(decData, "\"\n")
-		pbCards = append(pbCards, pbCard)
+		// delete cards
+		for _, cc := range clientCs {
+			if !util.StringInSlice(cc.Name, serverNames) {
+				// delete cards absent in server
+				err = c.repo.DeleteC(cc.Name)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else if dataPrimary == "client" {
+		// insert missing client cards to cards
+		for _, cc := range clientCs {
+			// convert model card to proto card
+			protoC, err := converters.CardToPBCard(cc)
+			if err != nil {
+				return err
+			}
+
+			if !util.StringInSlice(cc.Name, serverNames) {
+				// insert missing card to server db
+				reqS := &pb.InsertCardRequest{User: req.GetUser(), Card: protoC}
+				_, err = c.service.Insert(ctx, reqS)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// delete cards
+		for _, sc := range serverCs.GetCards() {
+			if !util.StringInSlice(sc.GetName(), clientNames) {
+				// delete cards absent in client
+				resD := &pb.DeleteCardRequest{User: req.GetUser(), Name: sc.GetName()}
+				_, err = c.service.Delete(ctx, resD)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
-	resp := &pb.ListCardResponse{Cards: pbCards}
-	return resp, err
+
+	return nil
 }

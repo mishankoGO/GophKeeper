@@ -37,3 +37,30 @@ func BinaryFileToPBBinaryFile(bf *binary_files.Files) (*pb.BinaryFile, error) {
 	}
 	return &pb.BinaryFile{Name: bf.Name, File: bf.File, UpdatedAt: timestamppb.New(bf.UpdatedAt)}, nil
 }
+
+// BinaryFilesToPBBinaryFiles converts model binary files to proto binary files.
+func BinaryFilesToPBBinaryFiles(bfs []*binary_files.Files) ([]*pb.BinaryFile, error) {
+	var protoBFs []*pb.BinaryFile
+
+	for _, bf := range bfs {
+		protoBF, err := BinaryFileToPBBinaryFile(bf)
+		if err != nil {
+			return nil, err
+		}
+		protoBFs = append(protoBFs, protoBF)
+	}
+	return protoBFs, nil
+}
+
+// PBBinaryFilesToBinaryFiles converts proto binary files to model binary files.
+func PBBinaryFilesToBinaryFiles(uid string, protoBFs []*pb.BinaryFile) ([]*binary_files.Files, error) {
+	var bfs []*binary_files.Files
+	for _, protoBF := range protoBFs {
+		bf, err := PBBinaryFileToBinaryFile(uid, protoBF)
+		if err != nil {
+			return nil, err
+		}
+		bfs = append(bfs, bf)
+	}
+	return bfs, nil
+}

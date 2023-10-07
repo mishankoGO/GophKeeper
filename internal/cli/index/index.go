@@ -25,7 +25,9 @@ type IndexModel struct {
 }
 
 func NewIndexModel() IndexModel {
-	return IndexModel{Step: "index"}
+	return IndexModel{
+		//Step: "index"
+	}
 }
 
 /* INDEX */

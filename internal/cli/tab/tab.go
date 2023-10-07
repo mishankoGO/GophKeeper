@@ -31,7 +31,7 @@ type TabModel struct {
 
 func NewTabModel() TabModel {
 	return TabModel{
-		Step:       "Tab",
+		//Step:       "Tab",
 		Tabs:       tabs,
 		TabContent: tabContent,
 	}
@@ -95,7 +95,7 @@ func (m TabModel) View() string {
 	doc.WriteString(row)
 	doc.WriteString("\n")
 	doc.WriteString(windowStyle.Width(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize()).Render(m.TabContent[m.ActiveTab]))
-	doc.WriteString(helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"))
+	doc.WriteString(helpStyle.Render("\nctrl+c to quit\n"))
 	return docStyle.Render(doc.String())
 }
 

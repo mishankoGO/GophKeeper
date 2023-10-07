@@ -24,7 +24,9 @@ type DataTypeModel struct {
 }
 
 func NewDataTypeModel() DataTypeModel {
-	return DataTypeModel{Step: "DataTypes"}
+	return DataTypeModel{
+		//Step: "DataTypes"
+	}
 }
 
 /* DATATYPE */

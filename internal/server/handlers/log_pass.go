@@ -6,6 +6,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -110,7 +111,7 @@ func (lp *LogPasses) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetLogPas
 	return res, nil
 }
 
-// Update method encrypts new binary file and updates record in db.
+// Update method encrypts new log pass and updates record in db.
 func (lp *LogPasses) Update(ctx context.Context, req *pb.UpdateLogPassRequest) (*pb.UpdateLogPassResponse, error) {
 	// convert proto user to model user
 	user := converters.PBUserToUser(req.GetUser())
@@ -182,5 +183,42 @@ func (lp *LogPasses) Delete(ctx context.Context, req *pb.DeleteLogPassRequest) (
 	// set result
 	res.Ok = true
 
+	return res, nil
+}
+
+// List method lists all log passes in db.
+func (lp *LogPasses) List(ctx context.Context, req *pb.ListLogPassRequest) (*pb.ListLogPassResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	lps, err := lp.Repo.ListLP(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing log passes: %w", err)
+	}
+
+	// decrypt log passes
+	for i, logPass := range lps {
+		decLogin, err := lp.Security.DecryptData(logPass.Login)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting login: %v", err)
+		}
+
+		decPass, err := lp.Security.DecryptData(logPass.Password)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting password: %v", err)
+		}
+
+		lps[i].Login = bytes.Trim(decLogin, "\"\n")
+		lps[i].Password = bytes.Trim(decPass, "\"\n")
+	}
+
+	// converts model log passes to proto log passes
+	protoLPs, err := converters.LogPassesToPBLogPasses(lps)
+	if err != nil {
+		return nil, fmt.Errorf("error converting log passes: %w", err)
+	}
+
+	// create response
+	res := &pb.ListLogPassResponse{LogPasses: protoLPs}
 	return res, nil
 }

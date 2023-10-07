@@ -6,6 +6,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -161,5 +162,35 @@ func (t *Texts) Delete(ctx context.Context, req *pb.DeleteTextRequest) (*pb.Dele
 	// set result
 	res.Ok = true
 
+	return res, nil
+}
+
+// List method lists all texts in db.
+func (t *Texts) List(ctx context.Context, req *pb.ListTextRequest) (*pb.ListTextResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	ts, err := t.Repo.ListT(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing texts: %w", err)
+	}
+
+	// decrypt texts
+	for i, text := range ts {
+		decData, err := t.Security.DecryptData(text.Text)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting text: %v", err)
+		}
+		ts[i].Text = bytes.Trim(decData, "\"\n")
+	}
+
+	// converts model texts to proto texts
+	protoTs, err := converters.TextsToPBTexts(ts)
+	if err != nil {
+		return nil, fmt.Errorf("error converting texts: %w", err)
+	}
+
+	// create response
+	res := &pb.ListTextResponse{Texts: protoTs}
 	return res, nil
 }

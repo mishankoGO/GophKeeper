@@ -212,8 +212,8 @@ func (r *DBRepository) DeleteBF(name string) error {
 }
 
 // ListBF method returns list of binary files.
-func (r *DBRepository) ListBF() (*[]binary_files.Files, error) {
-	var bfs []binary_files.Files
+func (r *DBRepository) ListBF() ([]*binary_files.Files, error) {
+	var bfs []*binary_files.Files
 	err := r.DB.View(func(tx *bolt.Tx) error {
 		var bf binary_files.Files
 		b := tx.Bucket([]byte("BinaryFiles"))
@@ -224,14 +224,14 @@ func (r *DBRepository) ListBF() (*[]binary_files.Files, error) {
 			if err != nil {
 				return err
 			}
-			bfs = append(bfs, bf)
+			bfs = append(bfs, &bf)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error listing binary files: %w", err)
 	}
-	return &bfs, nil
+	return bfs, nil
 }
 
 // InsertLP method inserts log pass to db.
@@ -319,8 +319,8 @@ func (r *DBRepository) DeleteLP(name string) error {
 }
 
 // ListLP method returns list of log passes.
-func (r *DBRepository) ListLP() (*[]log_passes.LogPasses, error) {
-	var lps []log_passes.LogPasses
+func (r *DBRepository) ListLP() ([]*log_passes.LogPasses, error) {
+	var lps []*log_passes.LogPasses
 	err := r.DB.View(func(tx *bolt.Tx) error {
 		var lp log_passes.LogPasses
 		b := tx.Bucket([]byte("LogPasses"))
@@ -331,14 +331,14 @@ func (r *DBRepository) ListLP() (*[]log_passes.LogPasses, error) {
 			if err != nil {
 				return err
 			}
-			lps = append(lps, lp)
+			lps = append(lps, &lp)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error listing logpasses: %w", err)
 	}
-	return &lps, nil
+	return lps, nil
 }
 
 // InsertC method inserts card to db.
@@ -426,8 +426,8 @@ func (r *DBRepository) DeleteC(name string) error {
 }
 
 // ListC method returns all the cards.
-func (r *DBRepository) ListC() (*[]cards.Cards, error) {
-	var ccs []cards.Cards
+func (r *DBRepository) ListC() ([]*cards.Cards, error) {
+	var ccs []*cards.Cards
 	err := r.DB.View(func(tx *bolt.Tx) error {
 		var cc cards.Cards
 		b := tx.Bucket([]byte("Cards"))
@@ -438,14 +438,14 @@ func (r *DBRepository) ListC() (*[]cards.Cards, error) {
 			if err != nil {
 				return err
 			}
-			ccs = append(ccs, cc)
+			ccs = append(ccs, &cc)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error listing cards: %w", err)
 	}
-	return &ccs, nil
+	return ccs, nil
 }
 
 // InsertT inserts text in db.
@@ -533,8 +533,8 @@ func (r *DBRepository) DeleteT(name string) error {
 }
 
 // ListT method returns all the texts.
-func (r *DBRepository) ListT() (*[]texts.Texts, error) {
-	var ts []texts.Texts
+func (r *DBRepository) ListT() ([]*texts.Texts, error) {
+	var ts []*texts.Texts
 	err := r.DB.View(func(tx *bolt.Tx) error {
 		var t texts.Texts
 		b := tx.Bucket([]byte("Texts"))
@@ -545,12 +545,12 @@ func (r *DBRepository) ListT() (*[]texts.Texts, error) {
 			if err != nil {
 				return err
 			}
-			ts = append(ts, t)
+			ts = append(ts, &t)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error listing texts: %w", err)
 	}
-	return &ts, nil
+	return ts, nil
 }
