@@ -52,6 +52,8 @@ func (lp *LogPasses) Insert(ctx context.Context, req *pb.InsertLogPassRequest) (
 	// encrypt login
 	encLogin := lp.Security.EncryptData(buf)
 
+	buf.Reset()
+
 	// marshal into bytes
 	buf.Write(password)
 

@@ -160,8 +160,9 @@ func (c *Client) Sync(user *users.User) error {
 		//if err != nil {
 		//	return fmt.Errorf("error syncing texts: %w", err)
 		//}
-		log.Println("data synced successfully!")
 	}
+	log.Println("data synced successfully!")
+
 	return nil
 }
 

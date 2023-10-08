@@ -190,30 +190,30 @@ func main() {
 	//log.Println("update text: ", updatetext)
 	//
 	//// logpasses
-	//logpass := &pb.LogPass{Name: "test logpass", Login: []byte("new login"), Pass: []byte("new pass"), UpdatedAt: timestamppb.New(time.Now())}
-	//insertlogpass, err := client.LogPassesClient.Insert(ctx, &pb.InsertLogPassRequest{User: logResp.GetUser(), LogPass: logpass})
+	//log_pass := &pb.LogPass{Name: "test log_pass", Login: []byte("new login"), Pass: []byte("new pass"), UpdatedAt: timestamppb.New(time.Now())}
+	//insertlogpass, err := client.LogPassesClient.Insert(ctx, &pb.InsertLogPassRequest{User: logResp.GetUser(), LogPass: log_pass})
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
-	//log.Println("insert logpass: ", insertlogpass)
+	//log.Println("insert log_pass: ", insertlogpass)
 	//
-	//logpass = &pb.LogPass{Name: "new test logpass", Login: []byte("new login"), Pass: []byte("new pass"), UpdatedAt: timestamppb.New(time.Now())}
-	//insertlogpass, err = client.LogPassesClient.Insert(ctx, &pb.InsertLogPassRequest{User: logResp.GetUser(), LogPass: logpass})
+	//log_pass = &pb.LogPass{Name: "new test log_pass", Login: []byte("new login"), Pass: []byte("new pass"), UpdatedAt: timestamppb.New(time.Now())}
+	//insertlogpass, err = client.LogPassesClient.Insert(ctx, &pb.InsertLogPassRequest{User: logResp.GetUser(), LogPass: log_pass})
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
-	//log.Println("insert logpass: ", insertlogpass)
+	//log.Println("insert log_pass: ", insertlogpass)
 	//
-	//getlogpass, err := client.LogPassesClient.Get(ctx, &pb.GetRequest{Name: "test logpass"})
+	//getlogpass, err := client.LogPassesClient.Get(ctx, &pb.GetRequest{Name: "test log_pass"})
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
-	//log.Println("get logpass: ", getlogpass)
+	//log.Println("get log_pass: ", getlogpass)
 	//
-	//logpass = &pb.LogPass{Name: "new test logpass", Login: []byte("new new login"), Pass: []byte("new new pass"), UpdatedAt: timestamppb.New(time.Now())}
-	//updatelogpass, err := client.LogPassesClient.Update(ctx, &pb.UpdateLogPassRequest{User: logResp.GetUser(), LogPass: logpass})
+	//log_pass = &pb.LogPass{Name: "new test log_pass", Login: []byte("new new login"), Pass: []byte("new new pass"), UpdatedAt: timestamppb.New(time.Now())}
+	//updatelogpass, err := client.LogPassesClient.Update(ctx, &pb.UpdateLogPassRequest{User: logResp.GetUser(), LogPass: log_pass})
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
-	//log.Println("update logpass: ", updatelogpass)
+	//log.Println("update log_pass: ", updatelogpass)
 }
