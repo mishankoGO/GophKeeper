@@ -4,12 +4,11 @@ package server
 
 import (
 	"fmt"
-	"github.com/mishankoGO/GophKeeper/internal/server/interceptors"
-	"net"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
+	"github.com/mishankoGO/GophKeeper/internal/server/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"net"
 
 	"github.com/mishankoGO/GophKeeper/config"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"

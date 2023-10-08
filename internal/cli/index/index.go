@@ -15,7 +15,7 @@ var (
 	helpStyle    = blurredStyle.Copy()
 )
 
-var choices = []string{"Login", "Register"}
+var choices = []string{"Login", "Register", "Build"}
 
 type IndexModel struct {
 	Choice string
