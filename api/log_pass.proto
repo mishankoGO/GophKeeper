@@ -22,6 +22,7 @@ service LogPasses {
   rpc Get(GetRequest) returns (GetLogPassResponse); // get log pass from db
   rpc Update(UpdateLogPassRequest) returns (UpdateLogPassResponse); // update log pass
   rpc Delete(DeleteLogPassRequest) returns (DeleteResponse); // delete log pass
+  rpc List(ListLogPassRequest) returns (ListLogPassResponse); // list log passes
 }
 
 // Insert request.
@@ -69,4 +70,14 @@ message DeleteLogPassRequest {
 // Delete response.
 message DeleteResponse {
   bool ok = 1;
+}
+
+// List request.
+message ListLogPassRequest {
+  User user = 1;
+}
+
+// List response.
+message ListLogPassResponse {
+  repeated LogPass log_passes = 1;
 }

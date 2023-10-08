@@ -6,8 +6,7 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-
+	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -45,23 +44,18 @@ func (lp *LogPasses) Insert(ctx context.Context, req *pb.InsertLogPassRequest) (
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 	res := &pb.InsertResponse{IsInserted: false}
 
 	// marshal into bytes
-	err = encoder.Encode(string(login))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding login: %v", err)
-	}
+	buf.Write(login)
 
 	// encrypt login
 	encLogin := lp.Security.EncryptData(buf)
 
+	buf.Reset()
+
 	// marshal into bytes
-	err = encoder.Encode(string(password))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding password: %v", err)
-	}
+	buf.Write(password)
 
 	// encrypt password
 	encPassword := lp.Security.EncryptData(buf)
@@ -119,7 +113,7 @@ func (lp *LogPasses) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetLogPas
 	return res, nil
 }
 
-// Update method encrypts new binary file and updates record in db.
+// Update method encrypts new log pass and updates record in db.
 func (lp *LogPasses) Update(ctx context.Context, req *pb.UpdateLogPassRequest) (*pb.UpdateLogPassResponse, error) {
 	// convert proto user to model user
 	user := converters.PBUserToUser(req.GetUser())
@@ -136,23 +130,18 @@ func (lp *LogPasses) Update(ctx context.Context, req *pb.UpdateLogPassRequest) (
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 
 	// marshall into bytes
-	err = encoder.Encode(string(login))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding login: %v", err)
-	}
+	buf.Write(login)
+
 	// encrypt login
 	encLogin := lp.Security.EncryptData(buf)
 
 	buf.Reset()
 
 	// marshall into bytes
-	err = encoder.Encode(string(password))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding password: %v", err)
-	}
+	buf.Write(password)
+
 	// encrypt password
 	encPassword := lp.Security.EncryptData(buf)
 
@@ -196,5 +185,42 @@ func (lp *LogPasses) Delete(ctx context.Context, req *pb.DeleteLogPassRequest) (
 	// set result
 	res.Ok = true
 
+	return res, nil
+}
+
+// List method lists all log passes in db.
+func (lp *LogPasses) List(ctx context.Context, req *pb.ListLogPassRequest) (*pb.ListLogPassResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	lps, err := lp.Repo.ListLP(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing log passes: %w", err)
+	}
+
+	// decrypt log passes
+	for i, logPass := range lps {
+		decLogin, err := lp.Security.DecryptData(logPass.Login)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting login: %v", err)
+		}
+
+		decPass, err := lp.Security.DecryptData(logPass.Password)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting password: %v", err)
+		}
+
+		lps[i].Login = bytes.Trim(decLogin, "\"\n")
+		lps[i].Password = bytes.Trim(decPass, "\"\n")
+	}
+
+	// converts model log passes to proto log passes
+	protoLPs, err := converters.LogPassesToPBLogPasses(lps)
+	if err != nil {
+		return nil, fmt.Errorf("error converting log passes: %w", err)
+	}
+
+	// create response
+	res := &pb.ListLogPassResponse{LogPasses: protoLPs}
 	return res, nil
 }

@@ -23,6 +23,7 @@ const (
 	LogPasses_Get_FullMethodName    = "/api.LogPasses/Get"
 	LogPasses_Update_FullMethodName = "/api.LogPasses/Update"
 	LogPasses_Delete_FullMethodName = "/api.LogPasses/Delete"
+	LogPasses_List_FullMethodName   = "/api.LogPasses/List"
 )
 
 // LogPassesClient is the client API for LogPasses service.
@@ -33,6 +34,7 @@ type LogPassesClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetLogPassResponse, error)
 	Update(ctx context.Context, in *UpdateLogPassRequest, opts ...grpc.CallOption) (*UpdateLogPassResponse, error)
 	Delete(ctx context.Context, in *DeleteLogPassRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	List(ctx context.Context, in *ListLogPassRequest, opts ...grpc.CallOption) (*ListLogPassResponse, error)
 }
 
 type logPassesClient struct {
@@ -79,6 +81,15 @@ func (c *logPassesClient) Delete(ctx context.Context, in *DeleteLogPassRequest, 
 	return out, nil
 }
 
+func (c *logPassesClient) List(ctx context.Context, in *ListLogPassRequest, opts ...grpc.CallOption) (*ListLogPassResponse, error) {
+	out := new(ListLogPassResponse)
+	err := c.cc.Invoke(ctx, LogPasses_List_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LogPassesServer is the server API for LogPasses service.
 // All implementations must embed UnimplementedLogPassesServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type LogPassesServer interface {
 	Get(context.Context, *GetRequest) (*GetLogPassResponse, error)
 	Update(context.Context, *UpdateLogPassRequest) (*UpdateLogPassResponse, error)
 	Delete(context.Context, *DeleteLogPassRequest) (*DeleteResponse, error)
+	List(context.Context, *ListLogPassRequest) (*ListLogPassResponse, error)
 	mustEmbedUnimplementedLogPassesServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedLogPassesServer) Update(context.Context, *UpdateLogPassReques
 }
 func (UnimplementedLogPassesServer) Delete(context.Context, *DeleteLogPassRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedLogPassesServer) List(context.Context, *ListLogPassRequest) (*ListLogPassResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedLogPassesServer) mustEmbedUnimplementedLogPassesServer() {}
 
@@ -191,6 +206,24 @@ func _LogPasses_Delete_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LogPasses_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLogPassRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogPassesServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LogPasses_List_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogPassesServer).List(ctx, req.(*ListLogPassRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LogPasses_ServiceDesc is the grpc.ServiceDesc for LogPasses service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var LogPasses_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _LogPasses_Delete_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _LogPasses_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

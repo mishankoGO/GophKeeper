@@ -211,6 +211,53 @@ func (r *DBRepository) DeleteBF(ctx context.Context, userID, name string) error 
 	return nil
 }
 
+// ListBF method lists binary files from db.
+func (r *DBRepository) ListBF(ctx context.Context, userID string) ([]*binary_files.Files, error) {
+	// list binary files
+	rows, err := r.DB.QueryContext(ctx, query.ListBinaryFiles, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing binary files: %w", err)
+	}
+	defer rows.Close()
+
+	bfs := make([]*binary_files.Files, 0)
+	for rows.Next() {
+		var bf = &binary_files.Files{}
+		var name string
+		var file, meta []byte
+		var updatedAt time.Time
+
+		if err = rows.Scan(&name, &file, &updatedAt, &meta); err != nil {
+			return nil, fmt.Errorf("error scaning results: %w", err)
+		}
+		if !bytes.Equal(meta, []byte("")) {
+			// unmarshall metadata
+			var metaMap = make(map[string]string)
+			err = json.Unmarshal(meta, &metaMap)
+			if err != nil {
+				return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
+			}
+
+			// create binary file
+			bf = &binary_files.Files{UserID: userID, Name: name, File: file, UpdatedAt: updatedAt, Meta: metaMap}
+		} else {
+			bf = &binary_files.Files{UserID: userID, Name: name, File: file, UpdatedAt: updatedAt}
+		}
+		bfs = append(bfs, bf)
+	}
+
+	rerr := rows.Close()
+	if rerr != nil {
+		return nil, fmt.Errorf("error closing rows: %w", err)
+	}
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return bfs, nil
+}
+
 // InsertLP method inserts log pass to db.
 func (r *DBRepository) InsertLP(ctx context.Context, lp *log_passes.LogPasses) error {
 	// insert log pass
@@ -287,6 +334,53 @@ func (r *DBRepository) DeleteLP(ctx context.Context, userID, name string) error 
 	return nil
 }
 
+// ListLP method lists logpasses from db.
+func (r *DBRepository) ListLP(ctx context.Context, userID string) ([]*log_passes.LogPasses, error) {
+	// list log passes
+	rows, err := r.DB.QueryContext(ctx, query.ListLogPasses, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing logpasses: %w", err)
+	}
+	defer rows.Close()
+
+	lps := make([]*log_passes.LogPasses, 0)
+	for rows.Next() {
+		var lp = &log_passes.LogPasses{}
+		var name string
+		var meta, login, password []byte
+		var updatedAt time.Time
+
+		if err := rows.Scan(&name, &login, &password, &updatedAt); err != nil {
+			return nil, fmt.Errorf("error scaning results: %w", err)
+		}
+		if !bytes.Equal(meta, []byte("")) {
+			// unmarshall metadata
+			var metaMap = make(map[string]string)
+			err = json.Unmarshal(meta, &metaMap)
+			if err != nil {
+				return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
+			}
+
+			// create log pass
+			lp = &log_passes.LogPasses{UserID: userID, Name: name, Login: login, Password: password, UpdatedAt: updatedAt, Meta: metaMap}
+		} else {
+			lp = &log_passes.LogPasses{UserID: userID, Name: name, Login: login, Password: password, UpdatedAt: updatedAt}
+		}
+		lps = append(lps, lp)
+	}
+
+	rerr := rows.Close()
+	if rerr != nil {
+		return nil, fmt.Errorf("error closing rows: %w", err)
+	}
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return lps, nil
+}
+
 // InsertC method inserts card to db.
 func (r *DBRepository) InsertC(ctx context.Context, c *cards.Cards) error {
 	// insert card
@@ -353,6 +447,53 @@ func (r *DBRepository) DeleteC(ctx context.Context, userID, name string) error {
 	return nil
 }
 
+// ListC method lists cards from db.
+func (r *DBRepository) ListC(ctx context.Context, userID string) ([]*cards.Cards, error) {
+	// list cards
+	rows, err := r.DB.QueryContext(ctx, query.ListCards, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing cards: %w", err)
+	}
+	defer rows.Close()
+
+	cs := make([]*cards.Cards, 0)
+	for rows.Next() {
+		var c = &cards.Cards{}
+		var name string
+		var meta, card []byte
+		var updatedAt time.Time
+
+		if err := rows.Scan(&name, &card, &updatedAt); err != nil {
+			return nil, fmt.Errorf("error scaning results: %w", err)
+		}
+		if !bytes.Equal(meta, []byte("")) {
+			// unmarshall metadata
+			var metaMap = make(map[string]string)
+			err = json.Unmarshal(meta, &metaMap)
+			if err != nil {
+				return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
+			}
+
+			// create card
+			c = &cards.Cards{UserID: userID, Name: name, Card: card, UpdatedAt: updatedAt, Meta: metaMap}
+		} else {
+			c = &cards.Cards{UserID: userID, Name: name, Card: card, UpdatedAt: updatedAt}
+		}
+		cs = append(cs, c)
+	}
+
+	rerr := rows.Close()
+	if rerr != nil {
+		return nil, fmt.Errorf("error closing rows: %w", err)
+	}
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return cs, nil
+}
+
 // InsertT inserts text in db.
 func (r *DBRepository) InsertT(ctx context.Context, t *texts.Texts) error {
 	// insert text
@@ -417,4 +558,51 @@ func (r *DBRepository) DeleteT(ctx context.Context, userID, name string) error {
 		return fmt.Errorf("error deleting text %s: %v", name, err)
 	}
 	return nil
+}
+
+// ListT method lists texts from db.
+func (r *DBRepository) ListT(ctx context.Context, userID string) ([]*texts.Texts, error) {
+	// list texts
+	rows, err := r.DB.QueryContext(ctx, query.ListTexts, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing texts: %w", err)
+	}
+	defer rows.Close()
+
+	ts := make([]*texts.Texts, 0)
+	for rows.Next() {
+		var t = &texts.Texts{}
+		var name string
+		var meta, text []byte
+		var updatedAt time.Time
+
+		if err := rows.Scan(&name, &text, &updatedAt); err != nil {
+			return nil, fmt.Errorf("error scaning results: %w", err)
+		}
+		if !bytes.Equal(meta, []byte("")) {
+			// unmarshall metadata
+			var metaMap = make(map[string]string)
+			err = json.Unmarshal(meta, &metaMap)
+			if err != nil {
+				return nil, fmt.Errorf("error unmarshalling meta information: %w", err)
+			}
+
+			// create text
+			t = &texts.Texts{UserID: userID, Name: name, Text: text, UpdatedAt: updatedAt, Meta: metaMap}
+		} else {
+			t = &texts.Texts{UserID: userID, Name: name, Text: text, UpdatedAt: updatedAt}
+		}
+		ts = append(ts, t)
+	}
+
+	rerr := rows.Close()
+	if rerr != nil {
+		return nil, fmt.Errorf("error closing rows: %w", err)
+	}
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return ts, nil
 }
