@@ -23,6 +23,7 @@ const (
 	Texts_Get_FullMethodName    = "/api.Texts/Get"
 	Texts_Update_FullMethodName = "/api.Texts/Update"
 	Texts_Delete_FullMethodName = "/api.Texts/Delete"
+	Texts_List_FullMethodName   = "/api.Texts/List"
 )
 
 // TextsClient is the client API for Texts service.
@@ -33,6 +34,7 @@ type TextsClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetTextResponse, error)
 	Update(ctx context.Context, in *UpdateTextRequest, opts ...grpc.CallOption) (*UpdateTextResponse, error)
 	Delete(ctx context.Context, in *DeleteTextRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	List(ctx context.Context, in *ListTextRequest, opts ...grpc.CallOption) (*ListTextResponse, error)
 }
 
 type textsClient struct {
@@ -79,6 +81,15 @@ func (c *textsClient) Delete(ctx context.Context, in *DeleteTextRequest, opts ..
 	return out, nil
 }
 
+func (c *textsClient) List(ctx context.Context, in *ListTextRequest, opts ...grpc.CallOption) (*ListTextResponse, error) {
+	out := new(ListTextResponse)
+	err := c.cc.Invoke(ctx, Texts_List_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TextsServer is the server API for Texts service.
 // All implementations must embed UnimplementedTextsServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type TextsServer interface {
 	Get(context.Context, *GetRequest) (*GetTextResponse, error)
 	Update(context.Context, *UpdateTextRequest) (*UpdateTextResponse, error)
 	Delete(context.Context, *DeleteTextRequest) (*DeleteResponse, error)
+	List(context.Context, *ListTextRequest) (*ListTextResponse, error)
 	mustEmbedUnimplementedTextsServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedTextsServer) Update(context.Context, *UpdateTextRequest) (*Up
 }
 func (UnimplementedTextsServer) Delete(context.Context, *DeleteTextRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedTextsServer) List(context.Context, *ListTextRequest) (*ListTextResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedTextsServer) mustEmbedUnimplementedTextsServer() {}
 
@@ -191,6 +206,24 @@ func _Texts_Delete_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Texts_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTextRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TextsServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Texts_List_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TextsServer).List(ctx, req.(*ListTextRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Texts_ServiceDesc is the grpc.ServiceDesc for Texts service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var Texts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _Texts_Delete_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _Texts_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,20 +1,24 @@
+// Package converters contains function to convert proto data to model data.
 package converters
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/cards"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// PBCardToCard converts proto card to model card.
 func PBCardToCard(uid string, pbc *pb.Card) (*cards.Cards, error) {
-	if pbc.Meta != nil {
+	// unmarshall meta if present
+	if pbc.Meta != nil && !bytes.Equal(pbc.Meta, []byte("")) {
 		var meta = make(map[string]string)
 		err := json.Unmarshal(pbc.GetMeta(), &meta)
 		if err != nil {
-			return nil, status.Error(codes.Internal, "error unmarshalling card meta")
+			return nil, fmt.Errorf("error unmarshalling card meta: %w", err)
 		}
 		return &cards.Cards{
 			UserID:    uid,
@@ -31,11 +35,13 @@ func PBCardToCard(uid string, pbc *pb.Card) (*cards.Cards, error) {
 	}, nil
 }
 
+// CardToPBCard converts model card to proto card.
 func CardToPBCard(c *cards.Cards) (*pb.Card, error) {
+	// marshall meta if present
 	if c.Meta != nil {
 		meta, err := json.Marshal(c.Meta)
 		if err != nil {
-			return nil, status.Error(codes.Internal, "error marshalling card meta")
+			return nil, fmt.Errorf("error marshalling card meta: %w", err)
 		}
 		return &pb.Card{
 			Name:      c.Name,
@@ -48,4 +54,31 @@ func CardToPBCard(c *cards.Cards) (*pb.Card, error) {
 		Card:      c.Card,
 		UpdatedAt: timestamppb.New(c.UpdatedAt),
 	}, nil
+}
+
+// CardsToPBCards converts model cards to proto cards.
+func CardsToPBCards(cs []*cards.Cards) ([]*pb.Card, error) {
+	var protoCs []*pb.Card
+
+	for _, c := range cs {
+		protoC, err := CardToPBCard(c)
+		if err != nil {
+			return nil, err
+		}
+		protoCs = append(protoCs, protoC)
+	}
+	return protoCs, nil
+}
+
+// PBCardsToCards converts proto cards to model cards.
+func PBCardsToCards(uid string, protoCs []*pb.Card) ([]*cards.Cards, error) {
+	var cs []*cards.Cards
+	for _, protoC := range protoCs {
+		c, err := PBCardToCard(uid, protoC)
+		if err != nil {
+			return nil, err
+		}
+		cs = append(cs, c)
+	}
+	return cs, nil
 }

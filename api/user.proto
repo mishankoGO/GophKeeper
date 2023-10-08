@@ -6,14 +6,17 @@ package api;
 
 option go_package = "github.com/mishankoGO/GophKeeper/api";
 
+// Users represents users server interface.
 service Users {
-  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Login(LoginRequest) returns (LoginResponse); // login user
 }
 
+// Login request.
 message LoginRequest {
   Credential cred = 1;
 }
 
+// Login response.
 message LoginResponse {
   User user = 1;
   string token = 2;

@@ -1,28 +1,35 @@
+// Package handlers contains servers interfaces.
+// The list of servers:
+//     Users, Credentials, BinaryFiles, Cards, Texts, LogPasses
 package handlers
 
 import (
 	"context"
+	"log"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"github.com/mishankoGO/GophKeeper/pkg/hash"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"log"
 )
 
+// Users contains repository and jwt manager.
 type Users struct {
 	pb.UnimplementedUsersServer
-	Repo       interfaces.Repository
-	jwtManager *security.JWTManager
+	Repo       interfaces.Repository // repository
+	jwtManager *security.JWTManager  // jwt manager
 }
 
+// NewUsers function creates new users server.
 func NewUsers(repo interfaces.Repository, jwtManager *security.JWTManager) *Users {
 	return &Users{Repo: repo, jwtManager: jwtManager}
 }
 
-// Login method logins user
+// Login method logins user.
 func (u *Users) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	// get credentials
 	pbCred := req.GetCred()

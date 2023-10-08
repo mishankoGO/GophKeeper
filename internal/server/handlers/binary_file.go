@@ -1,15 +1,19 @@
+// Package handlers contains servers interfaces.
+// The list of servers:
+//     Users, Credentials, BinaryFiles, Cards, Texts, LogPasses
 package handlers
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // NewBinaryFiles is a constructor for BinaryFilesServer interface instance.
@@ -40,14 +44,10 @@ func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileReque
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 	res := &pb.InsertResponse{IsInserted: false}
 
 	// marshall into bytes
-	err = encoder.Encode(string(file))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding binary file: %v", err)
-	}
+	buf.Write(file)
 
 	// encrypt data
 	encData := bf.Security.EncryptData(buf)
@@ -116,13 +116,9 @@ func (bf *BinaryFiles) Update(ctx context.Context, req *pb.UpdateBinaryFileReque
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 
 	// marshall into bytes
-	err = encoder.Encode(string(file))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding binary file: %v", err)
-	}
+	buf.Write(file)
 
 	// encrypt data
 	encData := bf.Security.EncryptData(buf)
@@ -166,5 +162,35 @@ func (bf *BinaryFiles) Delete(ctx context.Context, req *pb.DeleteBinaryFileReque
 	// set result
 	res.Ok = true
 
+	return res, nil
+}
+
+// List method lists all binary files in db.
+func (bf *BinaryFiles) List(ctx context.Context, req *pb.ListBinaryFileRequest) (*pb.ListBinaryFileResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	bfs, err := bf.Repo.ListBF(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing binary files: %w", err)
+	}
+
+	// decrypt files
+	for i, bfFile := range bfs {
+		decData, err := bf.Security.DecryptData(bfFile.File)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting binary file: %v", err)
+		}
+		bfs[i].File = bytes.Trim(decData, "\"\n")
+	}
+
+	// converts model binary files to proto binary files
+	protoBFs, err := converters.BinaryFilesToPBBinaryFiles(bfs)
+	if err != nil {
+		return nil, fmt.Errorf("error converting binary files: %w", err)
+	}
+
+	// create response
+	res := &pb.ListBinaryFileResponse{BinaryFiles: protoBFs}
 	return res, nil
 }
