@@ -6,8 +6,7 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-
+	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -21,7 +20,7 @@ import (
 func NewCards(repo interfaces.Repository, security *security.Security) *Cards {
 	return &Cards{
 		Repo:     repo,
-		Security: *security,
+		Security: security,
 	}
 }
 
@@ -29,7 +28,7 @@ func NewCards(repo interfaces.Repository, security *security.Security) *Cards {
 type Cards struct {
 	pb.UnimplementedCardsServer
 	Repo     interfaces.Repository // data storage
-	Security security.Security     // cipher component
+	Security *security.Security    // cipher component
 }
 
 // Insert method encrypts and inserts data to db.
@@ -45,14 +44,10 @@ func (c *Cards) Insert(ctx context.Context, req *pb.InsertCardRequest) (*pb.Inse
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 	res := &pb.InsertResponse{IsInserted: false}
 
 	// marshall into bytes
-	err = encoder.Encode(string(card_))
-	if err != nil {
-		return res, status.Errorf(codes.Internal, "error encoding card: %v", err)
-	}
+	buf.Write(card_)
 
 	// encrypt data
 	encData := c.Security.EncryptData(buf)
@@ -85,13 +80,12 @@ func (c *Cards) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetCardRespons
 
 	// decrypt data
 	decData, err := c.Security.DecryptData(card.Card)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+	}
 
 	// set decrypted card to Card
 	card.Card = bytes.Trim(decData, "\"\n")
-
-	if card.Meta == nil {
-		card.Meta = map[string]string{}
-	}
 
 	// convert card to proto card
 	pbCard, err := converters.CardToPBCard(card)
@@ -121,13 +115,9 @@ func (c *Cards) Update(ctx context.Context, req *pb.UpdateCardRequest) (*pb.Upda
 
 	// create encoder
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
 
 	// marshall into bytes
-	err = encoder.Encode(string(card_))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error encoding card: %v", err)
-	}
+	buf.Write(card_)
 
 	// encrypt data
 	encData := c.Security.EncryptData(buf)
@@ -170,5 +160,35 @@ func (c *Cards) Delete(ctx context.Context, req *pb.DeleteCardRequest) (*pb.Dele
 
 	// set status
 	res.Ok = true
+	return res, nil
+}
+
+// List method lists all cards in db.
+func (c *Cards) List(ctx context.Context, req *pb.ListCardRequest) (*pb.ListCardResponse, error) {
+	// convert proto user to user
+	user := converters.PBUserToUser(req.GetUser())
+
+	cs, err := c.Repo.ListC(ctx, user.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing cards: %w", err)
+	}
+
+	// decrypt files
+	for i, card := range cs {
+		decData, err := c.Security.DecryptData(card.Card)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting card: %v", err)
+		}
+		cs[i].Card = bytes.Trim(decData, "\"\n")
+	}
+
+	// converts model cards to proto cards
+	protoCs, err := converters.CardsToPBCards(cs)
+	if err != nil {
+		return nil, fmt.Errorf("error converting cards: %w", err)
+	}
+
+	// create response
+	res := &pb.ListCardResponse{Cards: protoCs}
 	return res, nil
 }

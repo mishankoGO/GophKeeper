@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
-	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 )
 
 // PBLogPassToLogPass converts proto log pass to model log pass.
@@ -58,4 +58,31 @@ func LogPassToPBLogPass(lp *log_passes.LogPasses) (*pb.LogPass, error) {
 		Pass:      lp.Password,
 		UpdatedAt: timestamppb.New(lp.UpdatedAt),
 	}, nil
+}
+
+// LogPassesToPBLogPasses converts model logpasses to proto logpasses.
+func LogPassesToPBLogPasses(lps []*log_passes.LogPasses) ([]*pb.LogPass, error) {
+	var protoLPs []*pb.LogPass
+
+	for _, lp := range lps {
+		protoLP, err := LogPassToPBLogPass(lp)
+		if err != nil {
+			return nil, err
+		}
+		protoLPs = append(protoLPs, protoLP)
+	}
+	return protoLPs, nil
+}
+
+// PBLogPassesToLogPasses converts proto logpasses to model logpasses.
+func PBLogPassesToLogPasses(uid string, protoLPs []*pb.LogPass) ([]*log_passes.LogPasses, error) {
+	var lps []*log_passes.LogPasses
+	for _, protoLP := range protoLPs {
+		lp, err := PBLogPassToLogPass(uid, protoLP)
+		if err != nil {
+			return nil, err
+		}
+		lps = append(lps, lp)
+	}
+	return lps, nil
 }

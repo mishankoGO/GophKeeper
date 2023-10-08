@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
@@ -55,4 +54,31 @@ func CardToPBCard(c *cards.Cards) (*pb.Card, error) {
 		Card:      c.Card,
 		UpdatedAt: timestamppb.New(c.UpdatedAt),
 	}, nil
+}
+
+// CardsToPBCards converts model cards to proto cards.
+func CardsToPBCards(cs []*cards.Cards) ([]*pb.Card, error) {
+	var protoCs []*pb.Card
+
+	for _, c := range cs {
+		protoC, err := CardToPBCard(c)
+		if err != nil {
+			return nil, err
+		}
+		protoCs = append(protoCs, protoC)
+	}
+	return protoCs, nil
+}
+
+// PBCardsToCards converts proto cards to model cards.
+func PBCardsToCards(uid string, protoCs []*pb.Card) ([]*cards.Cards, error) {
+	var cs []*cards.Cards
+	for _, protoC := range protoCs {
+		c, err := PBCardToCard(uid, protoC)
+		if err != nil {
+			return nil, err
+		}
+		cs = append(cs, c)
+	}
+	return cs, nil
 }

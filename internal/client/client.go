@@ -2,11 +2,16 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"github.com/mishankoGO/GophKeeper/config"
 	"github.com/mishankoGO/GophKeeper/internal/client/clients"
 	"github.com/mishankoGO/GophKeeper/internal/client/interceptors"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
+	"github.com/mishankoGO/GophKeeper/internal/converters"
+	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/users"
+	"github.com/mishankoGO/GophKeeper/internal/security"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
@@ -17,6 +22,7 @@ import (
 
 // Client contains configuration file, and client for different kinds of data.
 type Client struct {
+	connected         bool                       // connected to server
 	conf              *config.Config             // config file
 	conns             []*grpc.ClientConn         // array of connections
 	UsersClient       *clients.UsersClient       // users client
@@ -27,7 +33,7 @@ type Client struct {
 }
 
 // NewClient function create new Client instance.
-func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error) {
+func NewClient(conf *config.Config, repo interfaces.Repository, security *security.Security) (*Client, error) {
 	// parse port
 	port := ":" + strings.Split(conf.Address, ":")[1]
 
@@ -41,18 +47,19 @@ func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error)
 		usersClient := clients.NewUsersClient(nil, repo)
 
 		// connect cards client
-		cardsClient := clients.NewCardsClient(nil, repo)
+		cardsClient := clients.NewCardsClient(nil, repo, security)
 
 		// connect texts client
-		textsClient := clients.NewTextsClient(nil, repo)
+		textsClient := clients.NewTextsClient(nil, repo, security)
 
 		// connect binary files client
-		bfClient := clients.NewBinaryFilesClient(nil, repo)
+		bfClient := clients.NewBinaryFilesClient(nil, repo, security)
 
 		// connect log pass client
-		lpClient := clients.NewLogPassesClient(nil, repo)
+		lpClient := clients.NewLogPassesClient(nil, repo, security)
 
 		return &Client{
+			connected:         connected,
 			UsersClient:       usersClient,
 			CardsClient:       cardsClient,
 			TextsClient:       textsClient,
@@ -85,16 +92,16 @@ func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error)
 		}
 
 		// connect cards client
-		cardsClient := clients.NewCardsClient(conn2, repo)
+		cardsClient := clients.NewCardsClient(conn2, repo, security)
 
 		// connect texts client
-		textsClient := clients.NewTextsClient(conn2, repo)
+		textsClient := clients.NewTextsClient(conn2, repo, security)
 
 		// connect binary files client
-		bfClient := clients.NewBinaryFilesClient(conn2, repo)
+		bfClient := clients.NewBinaryFilesClient(conn2, repo, security)
 
 		// connect log pass client
-		lpClient := clients.NewLogPassesClient(conn2, repo)
+		lpClient := clients.NewLogPassesClient(conn2, repo, security)
 
 		// create connections array
 		conns := []*grpc.ClientConn{conn1, conn2}
@@ -106,9 +113,9 @@ func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error)
 			TextsClient:       textsClient,
 			BinaryFilesClient: bfClient,
 			LogPassesClient:   lpClient,
-			conns:             conns}
-
-		//err = client.sync()
+			conns:             conns,
+			connected:         connected,
+		}
 
 		return client, nil
 	}
@@ -118,12 +125,46 @@ func (c *Client) Close() {
 	for _, conn := range c.conns {
 		conn.Close()
 	}
+	c.UsersClient.Close()
 }
 
-//func (c *Client) sync() error {
-//	cards, err := c.BinaryFilesClient.List()
-//	return nil
-//}
+func (c *Client) Sync(user *users.User) error {
+
+	if c.connected {
+		log.Println("syncing data...")
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		protoUser := converters.UserToPBUser(user)
+
+		reqBF := &pb.ListBinaryFileRequest{User: protoUser}
+		err := c.BinaryFilesClient.Sync(ctx, reqBF)
+		if err != nil {
+			return fmt.Errorf("error syncing binary files: %w", err)
+		}
+
+		//reqC := &pb.ListCardRequest{User: protoUser}
+		//err := c.CardsClient.Sync(ctx, reqC)
+		//if err != nil {
+		//	return fmt.Errorf("error syncing cards: %w", err)
+		//}
+		//
+		//reqLP := &pb.ListLogPassRequest{User: protoUser}
+		//err := c.LogPassesClient.Sync(ctx, reqLP)
+		//if err != nil {
+		//	return fmt.Errorf("error syncing log passes: %w", err)
+		//}
+		//
+		//reqT := &pb.ListTextRequest{User: protoUser}
+		//err := c.TextsClient.Sync(ctx, reqT)
+		//if err != nil {
+		//	return fmt.Errorf("error syncing texts: %w", err)
+		//}
+	}
+	log.Println("data synced successfully!")
+
+	return nil
+}
 
 func ping(address string) bool {
 	_, err := net.DialTimeout("tcp", address, 2*time.Second)

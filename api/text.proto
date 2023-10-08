@@ -22,6 +22,7 @@ service Texts {
   rpc Get(GetRequest) returns (GetTextResponse); // get text from db
   rpc Update(UpdateTextRequest) returns (UpdateTextResponse); // update text
   rpc Delete(DeleteTextRequest) returns (DeleteResponse); // delete text
+  rpc List(ListTextRequest) returns (ListTextResponse); // list texts
 }
 
 // Insert request.
@@ -53,4 +54,14 @@ message UpdateTextResponse {
 message DeleteTextRequest {
   User user = 1;
   string name = 2;
+}
+
+// List request.
+message ListTextRequest {
+  User user = 1;
+}
+
+// List response.
+message ListTextResponse {
+  repeated Text texts = 1;
 }

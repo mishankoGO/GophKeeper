@@ -22,6 +22,7 @@ service Cards {
   rpc Get(GetRequest) returns (GetCardResponse); // get card from db
   rpc Update(UpdateCardRequest) returns (UpdateCardResponse); // update card
   rpc Delete(DeleteCardRequest) returns (DeleteResponse); // delete card
+  rpc List(ListCardRequest) returns (ListCardResponse); // list cards
 }
 
 // Insert request.
@@ -53,4 +54,14 @@ message UpdateCardResponse {
 message DeleteCardRequest {
   User user = 1;
   string name = 2;
+}
+
+// List request.
+message ListCardRequest {
+  User user = 1;
+}
+
+// List response.
+message ListCardResponse {
+  repeated Card cards = 1;
 }

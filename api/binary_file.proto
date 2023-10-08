@@ -22,6 +22,7 @@ service BinaryFiles {
   rpc Get(GetRequest) returns (GetBinaryFileResponse); // retrieves binary file from db
   rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse); // update binary file
   rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse); // delete binary file
+  rpc List(ListBinaryFileRequest) returns (ListBinaryFileResponse); // list binary files
 }
 
 // Insert request.
@@ -50,4 +51,14 @@ message UpdateBinaryFileResponse {
 message DeleteBinaryFileRequest {
   User user = 1;
   string name = 2;
+}
+
+// List request.
+message ListBinaryFileRequest {
+  User user = 1;
+}
+
+// List response.
+message ListBinaryFileResponse {
+  repeated BinaryFile binary_files = 1;
 }
