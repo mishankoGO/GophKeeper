@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mishankoGO/GophKeeper/internal/cli/binary_file"
+	"github.com/mishankoGO/GophKeeper/internal/cli/build_version"
 	"github.com/mishankoGO/GophKeeper/internal/cli/card"
 	"github.com/mishankoGO/GophKeeper/internal/cli/datatype"
 	"github.com/mishankoGO/GophKeeper/internal/cli/index"
@@ -13,7 +13,6 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli/text"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"os"
 	"strings"
 )
 
@@ -24,6 +23,7 @@ type Model struct {
 	TextModel       *text.TextModel
 	BinaryFileModel *binary_file.BinaryFileModel
 	LogPassModel    *log_pass.LogPassModel
+	BuildModel      *build_version.BuildModel
 	TabModel        *tab.TabModel
 	IndexModel      *index.IndexModel
 	DataTypeModel   *datatype.DataTypeModel
@@ -44,6 +44,7 @@ func InitialModel(client *client.Client) *Model {
 	textModel := text.NewTextModel(client)
 	fileModel := binary_file.NewBinaryFileModel(client)
 	logpassModel := log_pass.NewLogPassModel(client)
+	buildModel := build_version.NewBuildModel()
 	indexModel := index.NewIndexModel()
 	dataTypeModel := datatype.NewDataTypeModel()
 
@@ -54,6 +55,7 @@ func InitialModel(client *client.Client) *Model {
 		TextModel:       &textModel,
 		BinaryFileModel: &fileModel,
 		LogPassModel:    &logpassModel,
+		BuildModel:      &buildModel,
 		TabModel:        &tabModel,
 		IndexModel:      &indexModel,
 		DataTypeModel:   &dataTypeModel,
@@ -61,10 +63,7 @@ func InitialModel(client *client.Client) *Model {
 		Client:          client,
 		Step:            "index",
 	}
-	p, _ := os.UserHomeDir()
-	fmt.Println(p)
-	p += "/go/GoLandProjects/GophKeeper"
-	fmt.Println(p)
+
 	return &m
 }
 
@@ -79,6 +78,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, cmd := m.IndexModel.Update(msg)
 		m.Step = m.IndexModel.Step
 		m.Finish = m.IndexModel.Finish
+		return m, cmd
+	} else if m.Step == "Build" {
+		m.BuildModel.Step = "Build"
+		_, cmd := m.BuildModel.Update(msg)
+		m.Step = m.BuildModel.Step
+		m.Finish = m.BuildModel.Finish
 		return m, cmd
 	} else if m.Step == "Login" {
 		m.LoginModel.Step = "Login"
@@ -161,6 +166,8 @@ func (m Model) View() string {
 		return m.BinaryFileModel.View()
 	} else if strings.Split(m.Step, "_")[0] == "LogPass" {
 		return m.LogPassModel.View()
+	} else if m.Step == "Build" {
+		return m.BuildModel.View()
 	}
 	return m.IndexModel.View()
 }
