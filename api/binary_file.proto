@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "registration.proto";
+import "log_pass.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+// BinaryFile represents binary file instance.
+message BinaryFile {
+  string name = 1; // binary file name
+  bytes file = 2; // binary file
+  google.protobuf.Timestamp updated_at = 3; // time of the update or creation
+  bytes meta = 4; // metadata
+}
+
+// BinaryFiles represents BinaryFiles server interface.
+service BinaryFiles {
+  rpc Insert(InsertBinaryFileRequest) returns (InsertResponse); // inserts new binary file to db
+  rpc Get(GetRequest) returns (GetBinaryFileResponse); // retrieves binary file from db
+  rpc Update(UpdateBinaryFileRequest) returns (UpdateBinaryFileResponse); // update binary file
+  rpc Delete(DeleteBinaryFileRequest) returns (DeleteResponse); // delete binary file
+  rpc List(ListBinaryFileRequest) returns (ListBinaryFileResponse); // list binary files
+}
+
+// Insert request.
+message InsertBinaryFileRequest {
+  User user = 1;
+  BinaryFile file = 2;
+}
+
+// Get response.
+message GetBinaryFileResponse {
+  BinaryFile file = 1;
+}
+
+// Update request.
+message UpdateBinaryFileRequest {
+  User user = 1;
+  BinaryFile file = 2;
+}
+
+// Update response.
+message UpdateBinaryFileResponse {
+  BinaryFile file = 1;
+}
+
+// Delete request.
+message DeleteBinaryFileRequest {
+  User user = 1;
+  string name = 2;
+}
+
+// List request.
+message ListBinaryFileRequest {
+  User user = 1;
+}
+
+// List response.
+message ListBinaryFileResponse {
+  repeated BinaryFile binary_files = 1;
+}
