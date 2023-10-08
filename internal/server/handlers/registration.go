@@ -1,15 +1,21 @@
+// Package handlers contains servers interfaces.
+// The list of servers:
+//     Users, Credentials, BinaryFiles, Cards, Texts, LogPasses
 package handlers
 
 import (
 	"context"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/server/interfaces"
 	"github.com/mishankoGO/GophKeeper/pkg/hash"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
+// NewCredentials function creates new instance of credentials server.
 func NewCredentials(repo interfaces.Repository) *Credentials {
 	return &Credentials{Repo: repo}
 }

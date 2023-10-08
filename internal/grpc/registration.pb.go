@@ -21,13 +21,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Credential represents credential instance.
 type Credential struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Login    string `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
-	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	Login    string `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`       // user login
+	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"` // user password
 }
 
 func (x *Credential) Reset() {
@@ -76,14 +77,15 @@ func (x *Credential) GetPassword() string {
 	return ""
 }
 
+// User represents user instance.
 type User struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Login     string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`
-	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // user id
+	Login     string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                          // user login
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // time of creation
 }
 
 func (x *User) Reset() {
@@ -139,6 +141,7 @@ func (x *User) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// Register request.
 type RegisterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -186,6 +189,7 @@ func (x *RegisterRequest) GetCred() *Credential {
 	return nil
 }
 
+// Register response.
 type RegisterResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

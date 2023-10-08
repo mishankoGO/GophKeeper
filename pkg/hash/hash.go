@@ -1,3 +1,4 @@
+// Package hash contains HashPass function, that hashes input password.
 package hash
 
 import (
@@ -5,6 +6,7 @@ import (
 	"encoding/base64"
 )
 
+// HashPass hashes input password.
 func HashPass(password []byte) string {
 	hasher := sha1.New()
 	hasher.Write(password)

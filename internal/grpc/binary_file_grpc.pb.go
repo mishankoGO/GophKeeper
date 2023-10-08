@@ -23,6 +23,7 @@ const (
 	BinaryFiles_Get_FullMethodName    = "/api.BinaryFiles/Get"
 	BinaryFiles_Update_FullMethodName = "/api.BinaryFiles/Update"
 	BinaryFiles_Delete_FullMethodName = "/api.BinaryFiles/Delete"
+	BinaryFiles_List_FullMethodName   = "/api.BinaryFiles/List"
 )
 
 // BinaryFilesClient is the client API for BinaryFiles service.
@@ -33,6 +34,7 @@ type BinaryFilesClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetBinaryFileResponse, error)
 	Update(ctx context.Context, in *UpdateBinaryFileRequest, opts ...grpc.CallOption) (*UpdateBinaryFileResponse, error)
 	Delete(ctx context.Context, in *DeleteBinaryFileRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	List(ctx context.Context, in *ListBinaryFileRequest, opts ...grpc.CallOption) (*ListBinaryFileResponse, error)
 }
 
 type binaryFilesClient struct {
@@ -79,6 +81,15 @@ func (c *binaryFilesClient) Delete(ctx context.Context, in *DeleteBinaryFileRequ
 	return out, nil
 }
 
+func (c *binaryFilesClient) List(ctx context.Context, in *ListBinaryFileRequest, opts ...grpc.CallOption) (*ListBinaryFileResponse, error) {
+	out := new(ListBinaryFileResponse)
+	err := c.cc.Invoke(ctx, BinaryFiles_List_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BinaryFilesServer is the server API for BinaryFiles service.
 // All implementations must embed UnimplementedBinaryFilesServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type BinaryFilesServer interface {
 	Get(context.Context, *GetRequest) (*GetBinaryFileResponse, error)
 	Update(context.Context, *UpdateBinaryFileRequest) (*UpdateBinaryFileResponse, error)
 	Delete(context.Context, *DeleteBinaryFileRequest) (*DeleteResponse, error)
+	List(context.Context, *ListBinaryFileRequest) (*ListBinaryFileResponse, error)
 	mustEmbedUnimplementedBinaryFilesServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedBinaryFilesServer) Update(context.Context, *UpdateBinaryFileR
 }
 func (UnimplementedBinaryFilesServer) Delete(context.Context, *DeleteBinaryFileRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedBinaryFilesServer) List(context.Context, *ListBinaryFileRequest) (*ListBinaryFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedBinaryFilesServer) mustEmbedUnimplementedBinaryFilesServer() {}
 
@@ -191,6 +206,24 @@ func _BinaryFiles_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BinaryFiles_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBinaryFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BinaryFilesServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BinaryFiles_List_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BinaryFilesServer).List(ctx, req.(*ListBinaryFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BinaryFiles_ServiceDesc is the grpc.ServiceDesc for BinaryFiles service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var BinaryFiles_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _BinaryFiles_Delete_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _BinaryFiles_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
