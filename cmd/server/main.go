@@ -12,7 +12,7 @@ import (
 const (
 	keyPhrase     = "secret"         // key phrase from user
 	secretKey     = "secret"         // secret key for jwt
-	tokenDuration = 15 * time.Minute // duration of the token
+	tokenDuration = 30 * time.Minute // duration of the token
 )
 
 func main() {

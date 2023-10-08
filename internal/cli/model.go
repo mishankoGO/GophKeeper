@@ -8,6 +8,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli/index"
 	"github.com/mishankoGO/GophKeeper/internal/cli/login"
 	"github.com/mishankoGO/GophKeeper/internal/cli/tab"
+	"github.com/mishankoGO/GophKeeper/internal/cli/text"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
 	"strings"
@@ -17,6 +18,7 @@ type Model struct {
 	LoginModel    *login.LoginModel
 	RegisterModel *login.RegisterModel
 	CardModel     *card.CardModel
+	TextModel     *text.TextModel
 	TabModel      *tab.TabModel
 	IndexModel    *index.IndexModel
 	DataTypeModel *datatype.DataTypeModel
@@ -34,6 +36,7 @@ func InitialModel(client *client.Client) *Model {
 	registerModel := login.NewRegisterModel(client)
 	tabModel := tab.NewTabModel()
 	cardModel := card.NewCardModel(client)
+	textModel := text.NewTextModel(client)
 	indexModel := index.NewIndexModel()
 	dataTypeModel := datatype.NewDataTypeModel()
 
@@ -41,6 +44,7 @@ func InitialModel(client *client.Client) *Model {
 		LoginModel:    &loginModel,
 		RegisterModel: &registerModel,
 		CardModel:     &cardModel,
+		TextModel:     &textModel,
 		TabModel:      &tabModel,
 		IndexModel:    &indexModel,
 		DataTypeModel: &dataTypeModel,
@@ -99,6 +103,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Step = m.CardModel.Step
 		m.Finish = m.CardModel.Finish
 		return m, cmd
+	} else if strings.Split(m.Step, "_")[0] == "Text" {
+		m.TextModel.Step = m.Step
+		m.TextModel.User = m.User
+		_, cmd := m.TextModel.Update(msg)
+		m.TextModel.User = m.User
+		m.Step = m.TextModel.Step
+		m.Finish = m.TextModel.Finish
+		return m, cmd
 	}
 	return m, nil
 }
@@ -114,6 +126,12 @@ func (m Model) View() string {
 		return m.DataTypeModel.View()
 	} else if strings.Split(m.Step, "_")[0] == "Card" {
 		return m.CardModel.View()
+	} else if strings.Split(m.Step, "_")[0] == "Text" {
+		return m.TextModel.View()
 	}
 	return m.IndexModel.View()
+}
+
+func (m Model) GetUser() *users.User {
+	return m.User
 }

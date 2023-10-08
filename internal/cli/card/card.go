@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// fields to fill.
 const (
 	name = iota
 	ccn
@@ -23,11 +24,13 @@ const (
 	cvv
 )
 
+// input colors.
 const (
 	hotPink  = lipgloss.Color("#FF06B7")
 	darkGray = lipgloss.Color("#767676")
 )
 
+// styles.
 var (
 	inputStyle    = lipgloss.NewStyle().Foreground(hotPink)
 	continueStyle = lipgloss.NewStyle().Foreground(darkGray)
@@ -35,23 +38,25 @@ var (
 	helpStyle     = blurredStyle.Copy()
 )
 
+// CardModel is a tui card model instance.
 type CardModel struct {
-	CardInsertInputs []textinput.Model
-	CardGetInputs    []textinput.Model
-	CardUpdateInputs []textinput.Model
-	CardDeleteInputs []textinput.Model
-	GetResult        string
-	InsertResult     string
-	UpdateResult     string
-	DeleteResult     string
-	FocusedCard      int
-	Client           *client.Client
-	User             *users.User
-	Finish           bool
-	Step             string
-	Err              error
+	CardInsertInputs []textinput.Model // insert page
+	CardGetInputs    []textinput.Model // get page
+	CardUpdateInputs []textinput.Model // update page
+	CardDeleteInputs []textinput.Model // delete page
+	GetResult        string            // result of get request
+	InsertResult     string            // result of insert request
+	UpdateResult     string            // result of update request
+	DeleteResult     string            // result of delete request
+	FocusedCard      int               // index of focused field
+	Client           *client.Client    // client
+	User             *users.User       // user object
+	Finish           bool              // flag if tui is closed
+	Step             string            // current step
+	Err              error             // occurred error
 }
 
+// NewCardModel j
 func NewCardModel(client *client.Client) CardModel {
 	var cardInsertInputs = make([]textinput.Model, 4)
 	var cardUpdateInputs = make([]textinput.Model, 4)

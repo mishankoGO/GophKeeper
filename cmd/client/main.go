@@ -46,16 +46,20 @@ func main() {
 
 	// Run returns the model as a tea.Model.
 
-	_, err = p.Run()
+	m, err := p.Run()
 	if err != nil {
 		fmt.Println("Oh no:", err)
 		os.Exit(1)
 	}
 
 	// Assert the final tea.Model to our local model and print the choice.
-	//if m, ok := m.(cli.Model); ok && m.Finish {
-	//	break
-	//}
+	if m, ok := m.(*cli.Model); ok && m.Finish {
+		err = m.Client.Sync(m.GetUser())
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Bye!")
+	}
 	//fmt.Printf("Bye!")
 
 	// register
