@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mishankoGO/GophKeeper/internal/cli/binary_file"
 	"github.com/mishankoGO/GophKeeper/internal/cli/build_version"
@@ -13,6 +14,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli/text"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
+	"os"
 	"strings"
 )
 
@@ -63,13 +65,29 @@ func InitialModel(client *client.Client) *Model {
 		Client:          client,
 		Step:            "index",
 	}
-
+	d, _ := os.UserHomeDir()
+	fs, _ := os.ReadDir(d)
+	fmt.Println(d)
+	fmt.Println(fs[37].Name())
 	return &m
 }
 
 /* MODEL */
 func (m *Model) Init() tea.Cmd {
-	return nil
+	cmds := []tea.Cmd{
+		m.LoginModel.Init(),
+		m.IndexModel.Init(),
+		m.RegisterModel.Init(),
+		m.CardModel.Init(),
+		m.TextModel.Init(),
+		m.BinaryFileModel.Init(),
+		m.LogPassModel.Init(),
+		m.BuildModel.Init(),
+		m.TabModel.Init(),
+		m.DataTypeModel.Init(),
+	}
+
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -133,6 +151,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.BinaryFileModel.Step = m.Step
 		m.BinaryFileModel.User = m.User
 		_, cmd := m.BinaryFileModel.Update(msg)
+		//fmt.Println(m.Step)
 		m.BinaryFileModel.User = m.User
 		m.Step = m.BinaryFileModel.Step
 		m.Finish = m.BinaryFileModel.Finish
