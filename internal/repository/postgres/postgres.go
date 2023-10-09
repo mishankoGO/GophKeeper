@@ -350,7 +350,7 @@ func (r *DBRepository) ListLP(ctx context.Context, userID string) ([]*log_passes
 		var meta, login, password []byte
 		var updatedAt time.Time
 
-		if err := rows.Scan(&name, &login, &password, &updatedAt); err != nil {
+		if err := rows.Scan(&name, &login, &password, &updatedAt, &meta); err != nil {
 			return nil, fmt.Errorf("error scaning results: %w", err)
 		}
 		if !bytes.Equal(meta, []byte("")) {
@@ -463,7 +463,7 @@ func (r *DBRepository) ListC(ctx context.Context, userID string) ([]*cards.Cards
 		var meta, card []byte
 		var updatedAt time.Time
 
-		if err := rows.Scan(&name, &card, &updatedAt); err != nil {
+		if err := rows.Scan(&name, &card, &updatedAt, &meta); err != nil {
 			return nil, fmt.Errorf("error scaning results: %w", err)
 		}
 		if !bytes.Equal(meta, []byte("")) {
@@ -576,7 +576,7 @@ func (r *DBRepository) ListT(ctx context.Context, userID string) ([]*texts.Texts
 		var meta, text []byte
 		var updatedAt time.Time
 
-		if err := rows.Scan(&name, &text, &updatedAt); err != nil {
+		if err := rows.Scan(&name, &text, &updatedAt, &meta); err != nil {
 			return nil, fmt.Errorf("error scaning results: %w", err)
 		}
 		if !bytes.Equal(meta, []byte("")) {

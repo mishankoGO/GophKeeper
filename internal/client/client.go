@@ -135,31 +135,34 @@ func (c *Client) Sync(user *users.User) error {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		protoUser := converters.UserToPBUser(user)
+		if user != nil {
+			protoUser := converters.UserToPBUser(user)
 
-		reqBF := &pb.ListBinaryFileRequest{User: protoUser}
-		err := c.BinaryFilesClient.Sync(ctx, reqBF)
-		if err != nil {
-			return fmt.Errorf("error syncing binary files: %w", err)
+			reqBF := &pb.ListBinaryFileRequest{User: protoUser}
+			err := c.BinaryFilesClient.Sync(ctx, reqBF)
+			if err != nil {
+				return fmt.Errorf("error syncing binary files: %w", err)
+			}
+
+			reqC := &pb.ListCardRequest{User: protoUser}
+			err = c.CardsClient.Sync(ctx, reqC)
+			if err != nil {
+				return fmt.Errorf("error syncing cards: %w", err)
+			}
+
+			reqLP := &pb.ListLogPassRequest{User: protoUser}
+			err = c.LogPassesClient.Sync(ctx, reqLP)
+			if err != nil {
+				return fmt.Errorf("error syncing log passes: %w", err)
+			}
+
+			reqT := &pb.ListTextRequest{User: protoUser}
+			err = c.TextsClient.Sync(ctx, reqT)
+			if err != nil {
+				return fmt.Errorf("error syncing texts: %w", err)
+			}
 		}
 
-		//reqC := &pb.ListCardRequest{User: protoUser}
-		//err := c.CardsClient.Sync(ctx, reqC)
-		//if err != nil {
-		//	return fmt.Errorf("error syncing cards: %w", err)
-		//}
-		//
-		//reqLP := &pb.ListLogPassRequest{User: protoUser}
-		//err := c.LogPassesClient.Sync(ctx, reqLP)
-		//if err != nil {
-		//	return fmt.Errorf("error syncing log passes: %w", err)
-		//}
-		//
-		//reqT := &pb.ListTextRequest{User: protoUser}
-		//err := c.TextsClient.Sync(ctx, reqT)
-		//if err != nil {
-		//	return fmt.Errorf("error syncing texts: %w", err)
-		//}
 	}
 	log.Println("data synced successfully!")
 

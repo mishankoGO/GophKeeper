@@ -5,12 +5,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"strings"
-	"time"
 )
 
 var (
 	Version   = ""
-	BuildDate = time.Now()
+	BuildDate = ""
 )
 
 var (
@@ -71,7 +70,7 @@ func (m BuildModel) View() string {
 	b.WriteRune('\n')
 
 	b.WriteString("Build Date:  ")
-	b.WriteString(BuildDate.String())
+	b.WriteString(BuildDate)
 	b.WriteRune('\n')
 
 	b.WriteString(helpStyle.Render("ctrl+c to quit | ctrl+z to return"))
