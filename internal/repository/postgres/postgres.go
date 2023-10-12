@@ -138,7 +138,7 @@ func (r *DBRepository) InsertUser(ctx context.Context, u *users.User) error {
 // InsertBF method inserts binary file to db.
 func (r *DBRepository) InsertBF(ctx context.Context, bf *binary_files.Files) error {
 	// insert binary file
-	_, err := r.DB.ExecContext(ctx, query.InsertBinaryFile, bf.UserID, bf.Name, bf.File, bf.UpdatedAt, bf.Meta)
+	_, err := r.DB.ExecContext(ctx, query.InsertBinaryFile, bf.UserID, bf.Name, bf.File, bf.Extension, bf.UpdatedAt, bf.Meta)
 	if err != nil {
 		return fmt.Errorf("error inserting new binary file: %w", err)
 	}
@@ -149,10 +149,10 @@ func (r *DBRepository) InsertBF(ctx context.Context, bf *binary_files.Files) err
 func (r *DBRepository) GetBF(ctx context.Context, userID, name string) (*binary_files.Files, error) {
 	var uid, n string
 	var updatedAt time.Time
-	var meta, file []byte
+	var meta, file, extension []byte
 
 	// get binary file by name
-	err := r.DB.QueryRowContext(ctx, query.GetBinaryFile, userID, name).Scan(&uid, &n, &file, &updatedAt, &meta)
+	err := r.DB.QueryRowContext(ctx, query.GetBinaryFile, userID, name).Scan(&uid, &n, &file, &extension, &updatedAt, &meta)
 	if err != nil {
 		return nil, fmt.Errorf("error getting binary file %s: %w", n, err)
 	}
@@ -166,12 +166,12 @@ func (r *DBRepository) GetBF(ctx context.Context, userID, name string) (*binary_
 		}
 
 		// create binary file
-		var bf = &binary_files.Files{UserID: uid, Name: n, File: file, UpdatedAt: updatedAt, Meta: metaMap}
+		var bf = &binary_files.Files{UserID: uid, Name: n, File: file, Extension: extension, UpdatedAt: updatedAt, Meta: metaMap}
 		return bf, nil
 	}
 
 	// create binary file
-	var bf = &binary_files.Files{UserID: uid, Name: n, File: file, UpdatedAt: updatedAt}
+	var bf = &binary_files.Files{UserID: uid, Name: n, File: file, Extension: extension, UpdatedAt: updatedAt}
 
 	return bf, nil
 }
@@ -186,14 +186,14 @@ func (r *DBRepository) UpdateBF(ctx context.Context, bf *binary_files.Files) (*b
 		}
 
 		// update binary file with meta
-		_, err = r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.File, bf.UpdatedAt, metaByte)
+		_, err = r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.File, bf.Extension, bf.UpdatedAt, metaByte)
 		if err != nil {
 			return nil, fmt.Errorf("error updating binary file: %w", err)
 		}
 	}
 
 	// update binary file without metadata
-	_, err := r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.File, bf.UpdatedAt, bf.Meta)
+	_, err := r.DB.ExecContext(ctx, query.UpdateBinaryFile, bf.UserID, bf.Name, bf.File, bf.Extension, bf.UpdatedAt, bf.Meta)
 	if err != nil {
 		return nil, fmt.Errorf("error updating binary file: %w", err)
 	}
@@ -224,10 +224,10 @@ func (r *DBRepository) ListBF(ctx context.Context, userID string) ([]*binary_fil
 	for rows.Next() {
 		var bf = &binary_files.Files{}
 		var name string
-		var file, meta []byte
+		var file, meta, extension []byte
 		var updatedAt time.Time
 
-		if err = rows.Scan(&name, &file, &updatedAt, &meta); err != nil {
+		if err = rows.Scan(&name, &file, &extension, &updatedAt, &meta); err != nil {
 			return nil, fmt.Errorf("error scaning results: %w", err)
 		}
 		if !bytes.Equal(meta, []byte("")) {
@@ -239,9 +239,9 @@ func (r *DBRepository) ListBF(ctx context.Context, userID string) ([]*binary_fil
 			}
 
 			// create binary file
-			bf = &binary_files.Files{UserID: userID, Name: name, File: file, UpdatedAt: updatedAt, Meta: metaMap}
+			bf = &binary_files.Files{UserID: userID, Name: name, File: file, Extension: extension, UpdatedAt: updatedAt, Meta: metaMap}
 		} else {
-			bf = &binary_files.Files{UserID: userID, Name: name, File: file, UpdatedAt: updatedAt}
+			bf = &binary_files.Files{UserID: userID, Name: name, File: file, Extension: extension, UpdatedAt: updatedAt}
 		}
 		bfs = append(bfs, bf)
 	}
@@ -251,7 +251,7 @@ func (r *DBRepository) ListBF(ctx context.Context, userID string) ([]*binary_fil
 		return nil, fmt.Errorf("error closing rows: %w", err)
 	}
 	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
 

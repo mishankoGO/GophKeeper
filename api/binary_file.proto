@@ -12,8 +12,9 @@ option go_package = "github.com/mishankoGO/GophKeeper/api";
 message BinaryFile {
   string name = 1; // binary file name
   bytes file = 2; // binary file
-  google.protobuf.Timestamp updated_at = 3; // time of the update or creation
-  bytes meta = 4; // metadata
+  bytes extension = 3; // binary file extension
+  google.protobuf.Timestamp updated_at = 4; // time of the update or creation
+  bytes meta = 5; // metadata
 }
 
 // BinaryFiles represents BinaryFiles server interface.

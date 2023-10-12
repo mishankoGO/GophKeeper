@@ -20,9 +20,9 @@ func PBBinaryFileToBinaryFile(uid string, pbf *pb.BinaryFile) (*binary_files.Fil
 		if err != nil {
 			return nil, fmt.Errorf("error unmarshalling binary file meta: %w", err)
 		}
-		return &binary_files.Files{UserID: uid, Name: pbf.Name, File: pbf.File, UpdatedAt: pbf.UpdatedAt.AsTime(), Meta: meta}, nil
+		return &binary_files.Files{UserID: uid, Name: pbf.Name, File: pbf.File, Extension: pbf.Extension, UpdatedAt: pbf.UpdatedAt.AsTime(), Meta: meta}, nil
 	}
-	return &binary_files.Files{UserID: uid, Name: pbf.Name, File: pbf.File, UpdatedAt: pbf.UpdatedAt.AsTime()}, nil
+	return &binary_files.Files{UserID: uid, Name: pbf.Name, File: pbf.File, Extension: pbf.Extension, UpdatedAt: pbf.UpdatedAt.AsTime()}, nil
 }
 
 // BinaryFileToPBBinaryFile converts model binary file to proto binary file.
@@ -33,9 +33,9 @@ func BinaryFileToPBBinaryFile(bf *binary_files.Files) (*pb.BinaryFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling binary file meta: %w", err)
 		}
-		return &pb.BinaryFile{Name: bf.Name, File: bf.File, UpdatedAt: timestamppb.New(bf.UpdatedAt), Meta: meta}, nil
+		return &pb.BinaryFile{Name: bf.Name, File: bf.File, Extension: bf.Extension, UpdatedAt: timestamppb.New(bf.UpdatedAt), Meta: meta}, nil
 	}
-	return &pb.BinaryFile{Name: bf.Name, File: bf.File, UpdatedAt: timestamppb.New(bf.UpdatedAt)}, nil
+	return &pb.BinaryFile{Name: bf.Name, File: bf.File, Extension: bf.Extension, UpdatedAt: timestamppb.New(bf.UpdatedAt)}, nil
 }
 
 // BinaryFilesToPBBinaryFiles converts model binary files to proto binary files.

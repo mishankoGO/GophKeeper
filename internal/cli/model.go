@@ -151,7 +151,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.BinaryFileModel.Step = m.Step
 		m.BinaryFileModel.User = m.User
 		_, cmd := m.BinaryFileModel.Update(msg)
-		//fmt.Println(m.Step)
 		m.BinaryFileModel.User = m.User
 		m.Step = m.BinaryFileModel.Step
 		m.Finish = m.BinaryFileModel.Finish

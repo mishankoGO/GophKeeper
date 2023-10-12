@@ -1,6 +1,7 @@
 package binary_file
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -37,12 +38,18 @@ var (
 
 type BinaryFileModel struct {
 	FileInsertInputs []textinput.Model // insert page
+	FileGetInputs    []textinput.Model // get page
+	FileDeleteInputs []textinput.Model // delete page
+	FileUpdateInputs []textinput.Model // update page
 	filepicker       filepicker.Model
 	selectedFile     string
 	Finish           bool
 	Step             string
 	User             *users.User
 	InsertResult     string
+	GetResult        string
+	DeleteResult     string
+	UpdateResult     string
 	Client           *client.Client
 	Err              error
 }
@@ -56,16 +63,46 @@ func NewBinaryFileModel(client *client.Client) BinaryFileModel {
 	fileInsertInputs[0].Width = 30
 	fileInsertInputs[0].Prompt = ""
 
+	var fileUpdateInputs = make([]textinput.Model, 1)
+	fileUpdateInputs[0] = textinput.New()
+	fileUpdateInputs[0].Placeholder = "Enter name"
+	fileUpdateInputs[0].Focus()
+	fileUpdateInputs[0].CharLimit = 20
+	fileUpdateInputs[0].Width = 30
+	fileUpdateInputs[0].Prompt = ""
+
+	var fileGetInputs = make([]textinput.Model, 1)
+	fileGetInputs[0] = textinput.New()
+	fileGetInputs[0].Placeholder = "Enter name"
+	fileGetInputs[0].Focus()
+	fileGetInputs[0].CharLimit = 20
+	fileGetInputs[0].Width = 30
+	fileGetInputs[0].Prompt = ""
+
+	var fileDeleteInputs = make([]textinput.Model, 1)
+	fileDeleteInputs[0] = textinput.New()
+	fileDeleteInputs[0].Placeholder = "Enter name"
+	fileDeleteInputs[0].Focus()
+	fileDeleteInputs[0].CharLimit = 20
+	fileDeleteInputs[0].Width = 30
+	fileDeleteInputs[0].Prompt = ""
+
 	fp := filepicker.New()
 	fp.AllowedTypes = []string{".mod", ".sum", ".go", ".txt", ".md"}
 	d, _ := os.UserHomeDir()
 	fp.CurrentDirectory = d
-	fp.ShowHidden = true
+	fp.ShowHidden = false
 
 	m := BinaryFileModel{
 		filepicker:       fp,
 		FileInsertInputs: fileInsertInputs,
+		FileGetInputs:    fileGetInputs,
+		FileDeleteInputs: fileDeleteInputs,
+		FileUpdateInputs: fileUpdateInputs,
 		Client:           client,
+		GetResult:        "",
+		DeleteResult:     "",
+		Finish:           false,
 	}
 	return m
 }
@@ -84,6 +121,19 @@ func (m *BinaryFileModel) Init() tea.Cmd {
 }
 
 func (m *BinaryFileModel) View() string {
+	if m.Step == "Binary File_INSERT" {
+		return m.ViewInsert()
+	} else if m.Step == "Binary File_DELETE" {
+		return m.ViewDelete()
+	} else if m.Step == "Binary File_GET" {
+		return m.ViewGet()
+	} else if m.Step == "Binary File_UPDATE" {
+		return m.ViewUpdate()
+	}
+	return m.ViewGet()
+}
+
+func (m *BinaryFileModel) ViewInsert() string {
 	if m.Finish {
 		return ""
 	}
@@ -95,7 +145,111 @@ func (m *BinaryFileModel) View() string {
 		s.WriteString("Pick a file:")
 	} else {
 		return viewFilePicker(*m)
+	}
+	s.WriteString("\n\n" + m.filepicker.View() + "\n")
+	return s.String()
+}
 
+func (m *BinaryFileModel) ViewGet() string {
+	if m.Finish {
+		return ""
+	}
+	var b strings.Builder
+
+	if m.Err != nil {
+		b.WriteString(fmt.Sprintf("Error occured during card retrieval: %v", m.Err))
+	}
+
+	view := fmt.Sprintf(
+		`Enter file name:
+
+%s
+%s
+
+%s`,
+		inputStyle.Width(30).Render("File Name"),
+		m.FileGetInputs[name].View(),
+		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+	)
+
+	if m.GetResult != "" {
+		file := m.GetResult
+
+		view = fmt.Sprintf(
+			`Enter file name:
+
+%s
+%s
+
+%s`,
+
+			inputStyle.Render("Retrieved file:"),
+			file,
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+		) + "\n"
+		b.WriteString(view)
+		return b.String()
+	}
+	b.WriteString(view)
+	return b.String()
+}
+
+func (m *BinaryFileModel) ViewDelete() string {
+	if m.Finish {
+		return ""
+	}
+	var b strings.Builder
+
+	if m.Err != nil {
+		b.WriteString(fmt.Sprintf("Error occured during file removal: %v", m.Err))
+	}
+
+	view := fmt.Sprintf(
+		`Enter file name:
+
+%s
+%s
+
+%s`,
+		inputStyle.Width(30).Render("File Name"),
+		m.FileDeleteInputs[name].View(),
+		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+	)
+
+	if m.DeleteResult != "" {
+		file := m.DeleteResult
+
+		view = fmt.Sprintf(
+			`Enter file name:
+
+%s
+%s
+
+%s`,
+
+			inputStyle.Render("Retrieved file:"),
+			file,
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+		) + "\n"
+		b.WriteString(view)
+		return b.String()
+	}
+	b.WriteString(view)
+	return b.String()
+}
+
+func (m *BinaryFileModel) ViewUpdate() string {
+	if m.Finish {
+		return ""
+	}
+	var s strings.Builder
+	s.WriteString("\n  ")
+	if m.Err != nil {
+		s.WriteString(m.filepicker.Styles.DisabledFile.Render(m.Err.Error()))
+	} else if m.selectedFile == "" {
+		s.WriteString("Pick a file:")
+	} else {
+		return viewFilePickerUpdate(*m)
 	}
 	s.WriteString("\n\n" + m.filepicker.View() + "\n")
 	return s.String()
@@ -111,11 +265,69 @@ Selected file: %s
 %s
 `,
 		m.filepicker.Styles.Selected.Render(m.selectedFile),
-		inputStyle.Width(30).Render("Card Name:"),
+		inputStyle.Width(30).Render("File Name:"),
 		m.FileInsertInputs[0].View(),
 		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 	)
+
+	if m.InsertResult != "" {
+		view = fmt.Sprintf(`
+Selected file: %s
+
+%s
+
+%s`,
+			m.filepicker.Styles.Selected.Render(m.selectedFile),
+			m.InsertResult,
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"))
+		return view
+	}
+
 	return view
+}
+
+func viewFilePickerUpdate(m BinaryFileModel) string {
+	view := fmt.Sprintf(`
+Selected file: %s
+
+%s
+%s
+
+%s
+`,
+		m.filepicker.Styles.Selected.Render(m.selectedFile),
+		inputStyle.Width(30).Render("File Name:"),
+		m.FileUpdateInputs[0].View(),
+		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
+	)
+
+	if m.UpdateResult != "" {
+		view = fmt.Sprintf(`
+Selected file: %s
+
+%s
+
+%s`,
+			m.filepicker.Styles.Selected.Render(m.selectedFile),
+			m.UpdateResult,
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"))
+		return view
+	}
+
+	return view
+}
+
+func (m *BinaryFileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.Step == "Binary File_INSERT" {
+		return m.UpdateInsert(msg)
+	} else if m.Step == "Binary File_GET" {
+		return m.UpdateGet(msg)
+	} else if m.Step == "Binary File_DELETE" {
+		return m.UpdateDelete(msg)
+	} else if m.Step == "Binary File_UPDATE" {
+		return m.UpdateUpdate(msg)
+	}
+	return m, nil
 }
 
 func updateBinaryFileInsert(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -124,7 +336,7 @@ func updateBinaryFileInsert(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEnter, tea.KeyCtrlC:
+		case tea.KeyEnter:
 			m.Step = "Binary File_INSERT"
 			return m, nil
 		}
@@ -134,77 +346,59 @@ func updateBinaryFileInsert(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd
 	return m, cmd
 }
 
-func (m *BinaryFileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			m.Finish = true
+			m.selectedFile = ""
 			return m, tea.Quit
+		case "ctrl+z":
+			m.Step = "DataTypes"
+			m.selectedFile = ""
 		case "enter":
 			if m.selectedFile != "" {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
 				name_ := m.FileInsertInputs[0].Value()
+				splittedName := strings.Split(m.selectedFile, ".")
+				extension := "." + splittedName[len(splittedName)-1]
 
 				file, err := m.readFile(m.selectedFile)
 				if err != nil {
 					m.Err = err
-					//cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-					//for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-					//	if i == m.FocusedBinaryFile {
-					//		cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-					//		m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-					//		continue
-					//	}
-					//	m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-					//	m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-					//}
-					//return m, tea.Batch(cmds...)
+					m.selectedFile = ""
+					m.FileInsertInputs[0].Blur()
+					m.FileInsertInputs[0].Reset()
+					return m, nil
 				}
 
 				pbUser := converters.UserToPBUser(m.User)
-				f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, UpdatedAt: time.Now()}
+				f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, Extension: []byte(extension), UpdatedAt: time.Now()}
 
 				pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(f)
 				if err != nil {
 					m.Err = err
-					//m.FocusedBinaryFile = 0
-					//cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-					//for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-					//	if i == m.FocusedBinaryFile {
-					//		cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-					//		m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-					//		continue
-					//	}
-					//	m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-					//	m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-					//}
-					//return m, tea.Batch(cmds...)
+					m.selectedFile = ""
+					m.FileInsertInputs[0].Blur()
+					m.FileInsertInputs[0].Reset()
+					return m, nil
 				}
 
 				_, err = m.Client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: pbUser, File: pbBinaryFile})
 				if err != nil {
 					m.Err = err
-					//m.FocusedBinaryFile = 0
-					//cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-					//for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-					//	if i == m.FocusedBinaryFile {
-					//		cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-					//		m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-					//		continue
-					//	}
-					//	m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-					//	m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-					//
-					//}
-					//
-					//return m, tea.Batch(cmds...)
+					m.selectedFile = ""
+					m.FileInsertInputs[0].Blur()
+					m.FileInsertInputs[0].Reset()
+					return m, nil
 				}
 
 				m.InsertResult = "BinaryFile inserted successfully!"
 				m.Step = "Binary File_INSERT"
+				return m, nil
 			}
 		}
 	}
@@ -234,636 +428,237 @@ func (m *BinaryFileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-//func (m *BinaryFileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-//	if m.Step == "Binary File_INSERT" {
-//		return updateBinaryFileInsert(msg, m)
-//	} else if m.Step == "Binary File_GET" {
-//		return updateBinaryFileGet(msg, m)
-//	} else if m.Step == "Binary File_UPDATE" {
-//		return updateBinaryFileUpdate(msg, m)
-//	} else if m.Step == "Binary File_DELETE" {
-//		return updateBinaryFileDelete(msg, m)
-//	}
-//
-//	return m, nil
-//}
-//
-//func updateBinaryFileGet(msg tea.Msg, m *BinaryFileModel) (tea.Model, tea.Cmd) {
-//	var cmds = make([]tea.Cmd, len(m.BinaryFileGetInputs))
-//	switch msg := msg.(type) {
-//	case tea.KeyMsg:
-//		switch msg.Type {
-//		case tea.KeyEnter:
-//			if m.FocusedBinaryFile == len(m.BinaryFileGetInputs)-1 {
-//				ctx, cancel := context.WithCancel(context.Background())
-//				defer cancel()
-//
-//				name_ := m.BinaryFileGetInputs[name].Value()
-//
-//				pbUser := converters.UserToPBUser(m.User)
-//
-//				getResp, err := m.Client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: pbUser, Name: name_})
-//				if err != nil {
-//					m.Err = err
-//					m.FocusedBinaryFile = 0
-//					cmds = make([]tea.Cmd, len(m.BinaryFileGetInputs))
-//					for i := 0; i <= len(m.BinaryFileGetInputs)-1; i++ {
-//						if i == m.FocusedBinaryFile {
-//							cmds[i] = m.BinaryFileGetInputs[i].Focus()
-//							m.BinaryFileGetInputs[i].Reset()
-//							continue
-//						}
-//						m.BinaryFileGetInputs[i].Blur()
-//						m.BinaryFileGetInputs[i].Reset()
-//					}
-//					m.GetResult = ""
-//					return m, tea.Batch(cmds...)
-//				}
-//
-//				cmds = make([]tea.Cmd, len(m.BinaryFileGetInputs))
-//				for i := 0; i <= len(m.BinaryFileGetInputs)-1; i++ {
-//					if i == m.FocusedBinaryFile {
-//						cmds[i] = m.BinaryFileGetInputs[i].Focus()
-//						m.BinaryFileGetInputs[i].Reset()
-//						continue
-//					}
-//					m.BinaryFileGetInputs[i].Blur()
-//					m.BinaryFileGetInputs[i].Reset()
-//				}
-//
-//				m.GetResult = string(getResp.GetFile().GetFile())
-//				m.Step = "Binary File_GET"
-//				m.Err = nil
-//				return m, nil
-//			}
-//			m.NextInput()
-//		case tea.KeyCtrlZ:
-//			m.Step = "DataTypes"
-//		case tea.KeyCtrlC:
-//			m.Finish = true
-//			return m, tea.Quit
-//		case tea.KeyShiftTab, tea.KeyCtrlP:
-//			m.PrevInput()
-//		case tea.KeyTab, tea.KeyCtrlN:
-//			m.NextInput()
-//		}
-//
-//		cmds = make([]tea.Cmd, len(m.BinaryFileGetInputs))
-//		for i := 0; i <= len(m.BinaryFileGetInputs)-1; i++ {
-//			if i == m.FocusedBinaryFile {
-//				cmds[i] = m.BinaryFileGetInputs[i].Focus()
-//				continue
-//			}
-//			m.BinaryFileGetInputs[i].Blur()
-//			m.BinaryFileGetInputs[i].Reset()
-//		}
-//
-//		m.GetResult = ""
-//	}
-//	cmds = make([]tea.Cmd, len(m.BinaryFileGetInputs))
-//	for i := range m.BinaryFileGetInputs {
-//		m.BinaryFileGetInputs[i], cmds[i] = m.BinaryFileGetInputs[i].Update(msg)
-//	}
-//	return m, tea.Batch(cmds...)
-//}
-//
-//func updateBinaryFileDelete(msg tea.Msg, m *BinaryFileModel) (tea.Model, tea.Cmd) {
-//	var cmds = make([]tea.Cmd, len(m.BinaryFileDeleteInputs))
-//	switch msg := msg.(type) {
-//	case tea.KeyMsg:
-//		switch msg.Type {
-//		case tea.KeyEnter:
-//			if m.FocusedBinaryFile == len(m.BinaryFileDeleteInputs)-1 {
-//				ctx, cancel := context.WithCancel(context.Background())
-//				defer cancel()
-//
-//				name_ := m.BinaryFileDeleteInputs[name].Value()
-//
-//				pbUser := converters.UserToPBUser(m.User)
-//
-//				_, err := m.Client.BinaryFilesClient.Delete(ctx, &pb.DeleteBinaryFileRequest{
-//					User: pbUser,
-//					Name: name_,
-//				})
-//				if err != nil {
-//					m.Err = err
-//					m.FocusedBinaryFile = 0
-//					m.DeleteResult = ""
-//
-//					cmds = make([]tea.Cmd, len(m.BinaryFileDeleteInputs))
-//					for i := 0; i <= len(m.BinaryFileDeleteInputs)-1; i++ {
-//						if i == m.FocusedBinaryFile {
-//							cmds[i] = m.BinaryFileDeleteInputs[i].Focus()
-//							m.BinaryFileDeleteInputs[i].Reset()
-//							continue
-//						}
-//						m.BinaryFileDeleteInputs[i].Blur()
-//						m.BinaryFileDeleteInputs[i].Reset()
-//					}
-//					return m, tea.Batch(cmds...)
-//				}
-//				cmds = make([]tea.Cmd, len(m.BinaryFileDeleteInputs))
-//				for i := 0; i <= len(m.BinaryFileDeleteInputs)-1; i++ {
-//					if i == m.FocusedBinaryFile {
-//						cmds[i] = m.BinaryFileDeleteInputs[i].Focus()
-//						m.BinaryFileDeleteInputs[i].Reset()
-//						continue
-//					}
-//					m.BinaryFileDeleteInputs[i].Blur()
-//					m.BinaryFileDeleteInputs[i].Reset()
-//				}
-//				m.DeleteResult = "BinaryFile deleted successfully!"
-//				m.Step = "Binary File_DELETE"
-//				return m, nil
-//			}
-//			m.NextInput()
-//		case tea.KeyCtrlZ:
-//			m.Step = "DataTypes"
-//		case tea.KeyCtrlC:
-//			m.Finish = true
-//			return m, tea.Quit
-//		case tea.KeyShiftTab, tea.KeyCtrlP:
-//			m.PrevInput()
-//		case tea.KeyTab, tea.KeyCtrlN:
-//			m.NextInput()
-//		}
-//		cmds = make([]tea.Cmd, len(m.BinaryFileDeleteInputs))
-//		for i := 0; i <= len(m.BinaryFileDeleteInputs)-1; i++ {
-//			if i == m.FocusedBinaryFile {
-//				cmds[i] = m.BinaryFileDeleteInputs[i].Focus()
-//				continue
-//			}
-//			m.BinaryFileDeleteInputs[i].Blur()
-//			m.BinaryFileDeleteInputs[i].Reset()
-//		}
-//		m.DeleteResult = ""
-//	}
-//
-//	cmds = make([]tea.Cmd, len(m.BinaryFileDeleteInputs))
-//	for i := range m.BinaryFileDeleteInputs {
-//		m.BinaryFileDeleteInputs[i], cmds[i] = m.BinaryFileDeleteInputs[i].Update(msg)
-//	}
-//
-//	return m, tea.Batch(cmds...)
-//}
-//
-//func updateBinaryFileInsert(msg tea.Msg, m *BinaryFileModel) (tea.Model, tea.Cmd) {
-//	var cmds = make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//	switch msg := msg.(type) {
-//	case tea.KeyMsg:
-//		switch msg.Type {
-//		case tea.KeyEnter:
-//			m.choose = true
-//			return updateBinaryFileInsertFile(msg, m)
-//		case tea.KeyCtrlZ:
-//			m.Step = "DataTypes"
-//		case tea.KeyCtrlC, tea.KeyEsc:
-//			m.Finish = true
-//			return m, tea.Quit
-//		case tea.KeyShiftTab, tea.KeyCtrlP:
-//			m.PrevInput()
-//		case tea.KeyTab, tea.KeyCtrlN:
-//			m.NextInput()
-//		}
-//		cmds = make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//		for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-//			if i == m.FocusedBinaryFile {
-//				cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-//				continue
-//			}
-//			m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-//		}
-//		m.InsertResult = ""
-//	}
-//
-//	cmds = make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//	for i := range m.BinaryFileInsertInputs.binaryFileName {
-//		m.BinaryFileInsertInputs.binaryFileName[i], cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Update(msg)
-//	}
-//	return m, tea.Batch(cmds...)
-//}
-//
-//func updateBinaryFileInsertFile(msg tea.Msg, m *BinaryFileModel) (tea.Model, tea.Cmd) {
-//	m.BinaryFileInsertInputs.binaryFile.Init()
-//	switch msg := msg.(type) {
-//	case tea.KeyMsg:
-//		switch msg.String() {
-//		case "ctrl+c", "q":
-//			m.Finish = true
-//			return m, tea.Quit
-//		}
-//	}
-//
-//	var cmd tea.Cmd
-//	m.BinaryFileInsertInputs.binaryFile, cmd = m.BinaryFileInsertInputs.binaryFile.Update(msg)
-//
-//	// Did the user select a file?
-//	if didSelect, path := m.BinaryFileInsertInputs.binaryFile.DidSelectFile(msg); didSelect {
-//		// Get the path of the selected file.
-//		m.selectedFile = path
-//		ctx, cancel := context.WithCancel(context.Background())
-//		defer cancel()
-//
-//		name_ := m.BinaryFileInsertInputs.binaryFileName[name].Value()
-//
-//		file, err := m.readFile(m.selectedFile)
-//		if err != nil {
-//			m.Err = err
-//			m.FocusedBinaryFile = 0
-//			cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//			for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-//				if i == m.FocusedBinaryFile {
-//					cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-//					m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//					continue
-//				}
-//				m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-//				m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//			}
-//			return m, tea.Batch(cmds...)
-//		}
-//
-//		pbUser := converters.UserToPBUser(m.User)
-//		f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, UpdatedAt: time.Now()}
-//
-//		pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(f)
-//		if err != nil {
-//			m.Err = err
-//			m.FocusedBinaryFile = 0
-//			cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//			for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-//				if i == m.FocusedBinaryFile {
-//					cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-//					m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//					continue
-//				}
-//				m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-//				m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//			}
-//			return m, tea.Batch(cmds...)
-//		}
-//
-//		_, err = m.Client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: pbUser, File: pbBinaryFile})
-//		if err != nil {
-//			m.Err = err
-//			m.FocusedBinaryFile = 0
-//			cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//			for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-//				if i == m.FocusedBinaryFile {
-//					cmds[i] = m.BinaryFileInsertInputs.binaryFileName[i].Focus()
-//					m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//					continue
-//				}
-//				m.BinaryFileInsertInputs.binaryFileName[i].Blur()
-//				m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//
-//			}
-//
-//			return m, tea.Batch(cmds...)
-//		}
-//
-//		m.FocusedBinaryFile = 0
-//		m.InsertResult = "BinaryFile inserted successfully!"
-//		m.Step = "Binary File_INSERT"
-//
-//		cmds := make([]tea.Cmd, len(m.BinaryFileInsertInputs.binaryFileName))
-//		for i := 0; i <= len(m.BinaryFileInsertInputs.binaryFileName)-1; i++ {
-//			if i == m.FocusedBinaryFile {
-//				//cmds[i] = m.BinaryFileInsertInputs.binaryFile.Init()
-//				m.BinaryFileInsertInputs.binaryFileName[i].Reset()
-//				continue
-//			}
-//		}
-//
-//		return m, tea.Batch(cmds...)
-//	}
-//
-//	// Did the user select a disabled file?
-//	// This is only necessary to display an error to the user.
-//	if didSelect, path := m.BinaryFileInsertInputs.binaryFile.DidSelectDisabledFile(msg); didSelect {
-//		// Let's clear the selectedFile and display an error.
-//		m.Err = errors.New(path + " is not valid.")
-//		m.selectedFile = ""
-//		return m, tea.Batch(cmd, clearErrorAfter(2*time.Second))
-//	}
-//	return m, cmd
-//}
-//
-//type clearErrorMsg struct{}
-//
-//func clearErrorAfter(t time.Duration) tea.Cmd {
-//	return tea.Tick(t, func(_ time.Time) tea.Msg {
-//		return clearErrorMsg{}
-//	})
-//}
-//func updateBinaryFileUpdate(msg tea.Msg, m *BinaryFileModel) (tea.Model, tea.Cmd) {
-//	//var cmds = make([]tea.Cmd, len(m.BinaryFileUpdateInputs.textName))
-//	//switch msg := msg.(type) {
-//	//case tea.KeyMsg:
-//	//	switch msg.Type {
-//	//	case tea.KeyEnter, tea.KeyCtrlQ:
-//	//		if m.FocusedBinaryFile == len(m.BinaryFileUpdateInputs.textName) {
-//	//			switch msg.Type {
-//	//			case tea.KeyCtrlQ:
-//	//				ctx, cancel := context.WithCancel(context.Background())
-//	//				defer cancel()
-//	//
-//	//				name_ := m.BinaryFileUpdateInputs.textName[name].Value()
-//	//				text := m.BinaryFileUpdateInputs.text.Value()
-//	//
-//	//				pbUser := converters.UserToPBUser(m.User)
-//	//				t := &texts.BinaryFiles{UserID: pbUser.GetUserId(), Name: name_, BinaryFile: []byte(text), UpdatedAt: time.Now()}
-//	//
-//	//				pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(t)
-//	//				if err != nil {
-//	//					m.Err = err
-//	//					m.FocusedBinaryFile = 0
-//	//					cmds = make([]tea.Cmd, len(m.BinaryFileUpdateInputs.textName))
-//	//					for i := 0; i <= len(m.BinaryFileUpdateInputs.textName)-1; i++ {
-//	//						if i == m.FocusedBinaryFile {
-//	//							cmds[i] = m.BinaryFileUpdateInputs.textName[i].Focus()
-//	//							m.BinaryFileUpdateInputs.textName[i].Reset()
-//	//							continue
-//	//						}
-//	//						m.BinaryFileUpdateInputs.textName[i].Blur()
-//	//						m.BinaryFileUpdateInputs.textName[i].Reset()
-//	//					}
-//	//					m.BinaryFileUpdateInputs.text.Blur()
-//	//					m.BinaryFileUpdateInputs.text.Reset()
-//	//					return m, tea.Batch(cmds...)
-//	//				}
-//	//
-//	//				_, err = m.Client.BinaryFilesClient.Update(ctx, &pb.UpdateBinaryFileRequest{User: pbUser, BinaryFile: pbBinaryFile})
-//	//				if err != nil {
-//	//					m.Err = err
-//	//					m.FocusedBinaryFile = 0
-//	//					cmds = make([]tea.Cmd, len(m.BinaryFileUpdateInputs.textName))
-//	//					for i := 0; i <= len(m.BinaryFileUpdateInputs.textName)-1; i++ {
-//	//						if i == m.FocusedBinaryFile {
-//	//							cmds[i] = m.BinaryFileUpdateInputs.textName[i].Focus()
-//	//							m.BinaryFileUpdateInputs.textName[i].Reset()
-//	//							continue
-//	//						}
-//	//						m.BinaryFileUpdateInputs.textName[i].Blur()
-//	//						m.BinaryFileUpdateInputs.textName[i].Reset()
-//	//
-//	//					}
-//	//					m.BinaryFileUpdateInputs.text.Blur()
-//	//					m.BinaryFileUpdateInputs.text.Reset()
-//	//					return m, tea.Batch(cmds...)
-//	//				}
-//	//
-//	//				m.FocusedBinaryFile = 0
-//	//				m.UpdateResult = "BinaryFile updated successfully!"
-//	//				m.Step = "BinaryFile_UPDATE"
-//	//
-//	//				cmds = make([]tea.Cmd, len(m.BinaryFileUpdateInputs.textName))
-//	//				for i := 0; i <= len(m.BinaryFileUpdateInputs.textName)-1; i++ {
-//	//					if i == m.FocusedBinaryFile {
-//	//						cmds[i] = m.BinaryFileUpdateInputs.text.Focus()
-//	//						m.BinaryFileUpdateInputs.textName[i].Reset()
-//	//						continue
-//	//					}
-//	//					m.BinaryFileUpdateInputs.textName[i].Blur()
-//	//					m.BinaryFileUpdateInputs.textName[i].Reset()
-//	//				}
-//	//
-//	//				return m, tea.Batch(cmds...)
-//	//			}
-//	//		}
-//	//	case tea.KeyCtrlZ:
-//	//		m.Step = "DataTypes"
-//	//	case tea.KeyCtrlC, tea.KeyEsc:
-//	//		m.Finish = true
-//	//		return m, tea.Quit
-//	//	case tea.KeyShiftTab, tea.KeyCtrlP:
-//	//		m.PrevInput()
-//	//	case tea.KeyTab, tea.KeyCtrlN:
-//	//		m.NextInput()
-//	//	}
-//	//	cmds = make([]tea.Cmd, len(m.BinaryFileUpdateInputs.textName))
-//	//	for i := 0; i <= len(m.BinaryFileUpdateInputs.textName)-1; i++ {
-//	//		if i == m.FocusedBinaryFile {
-//	//			cmds[i] = m.BinaryFileUpdateInputs.textName[i].Focus()
-//	//			continue
-//	//		}
-//	//		m.BinaryFileUpdateInputs.textName[i].Blur()
-//	//	}
-//	//	m.UpdateResult = ""
-//	//
-//	//	if m.FocusedBinaryFile == 1 {
-//	//		var cmd tea.Cmd
-//	//		m.BinaryFileUpdateInputs.text, cmd = m.BinaryFileUpdateInputs.text.Update(msg)
-//	//		return m, cmd
-//	//	}
-//	//
-//	//}
-//	//
-//	//cmds = make([]tea.Cmd, len(m.BinaryFileUpdateInputs.textName))
-//	//for i := range m.BinaryFileUpdateInputs.textName {
-//	//	m.BinaryFileUpdateInputs.textName[i], cmds[i] = m.BinaryFileUpdateInputs.textName[i].Update(msg)
-//	//}
-//	//return m, tea.Batch(cmds...)
-//	return m, nil
-//}
-//
-//func (m BinaryFileModel) View() string {
-//	if m.Step == "Binary File_INSERT" {
-//		return viewBinaryFileInsert(m)
-//	} else if m.Step == "Binary File_UPDATE" {
-//		return viewBinaryFileUpdate(m)
-//	} else if m.Step == "Binary File_DELETE" {
-//		return viewBinaryFileDelete(m)
-//	} else {
-//		return viewBinaryFileGet(m)
-//	}
-//}
-//
-//func viewBinaryFileGet(m BinaryFileModel) string {
-//	var b strings.Builder
-//
-//	if m.Err != nil {
-//		b.WriteString(fmt.Sprintf("Error occured during file retrieval: %v", m.Err))
-//	}
-//
-//	view := fmt.Sprintf(
-//		`Enter file name:
-//
-//%s
-//%s
-//
-//%s`,
-//		inputStyle.Width(30).Render("BinaryFile Name"),
-//		m.BinaryFileGetInputs[name].View(),
-//		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
-//	)
-//
-//	if m.GetResult != "" {
-//		res := m.GetResult
-//		view = fmt.Sprintf(
-//			`Enter file name:
-//
-//%s
-//%s
-//
-//%s`,
-//			inputStyle.Render("BinaryFile"),
-//			res,
-//			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
-//		) + "\n"
-//		b.WriteString(view)
-//		return b.String()
-//	}
-//	b.WriteString(view)
-//	return b.String()
-//}
-//
-//func viewBinaryFileInsertFile(m BinaryFileModel) string {
-//	//if m.Finish {
-//	//	return ""
-//	//}
-//	var s strings.Builder
-//	s.WriteString("\n  ")
-//	if m.Err != nil {
-//		s.WriteString(m.BinaryFileInsertInputs.binaryFile.Styles.DisabledFile.Render(m.Err.Error()))
-//	} else if m.selectedFile == "" {
-//		s.WriteString("Pick a file:")
-//	} else {
-//		s.WriteString("Selected file: " + m.BinaryFileInsertInputs.binaryFile.Styles.Selected.Render(m.selectedFile))
-//	}
-//	s.WriteString("\n\n" + m.BinaryFileInsertInputs.binaryFile.View() + "\n")
-//	return s.String()
-//}
-//
-//func viewBinaryFileInsert(m BinaryFileModel) string {
-//	var b strings.Builder
-//
-//	if m.Err != nil {
-//		b.WriteString(fmt.Sprintf("Error occured during file insertion: %v", m.Err))
-//	}
-//	return viewBinaryFileInsertFile(m)
-//
-//	//	if m.choose {
-//	//		return viewBinaryFileInsertFile(m)
-//	//	} else {
-//	//		view := fmt.Sprintf(
-//	//			`Enter new file info:
-//	//%s
-//	//%s
-//	//
-//	//%s
-//	//`,
-//	//			inputStyle.Width(30).Render("BinaryFile Name"),
-//	//			m.BinaryFileInsertInputs.binaryFileName[name].View(),
-//	//
-//	//			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send\n"),
-//	//		) + "\n"
-//	//		b.WriteString(view)
-//	//	}
-//	//	return b.String()
-//}
-//
-//func viewBinaryFileUpdate(m BinaryFileModel) string {
-//	//	var b strings.Builder
-//	//
-//	//	if m.Err != nil {
-//	//		b.WriteString(fmt.Sprintf("Error occured during text updating: %v", m.Err))
-//	//	}
-//	//
-//	//	if m.UpdateResult == "" {
-//	//		view := fmt.Sprintf(
-//	//			`Enter new text info:
-//	//
-//	//%s
-//	//%s
-//	//
-//	//%s
-//	//
-//	//%s
-//	//%s`,
-//	//			inputStyle.Width(30).Render("BinaryFile Name"),
-//	//			m.BinaryFileUpdateInputs.textName[name].View(),
-//	//			inputStyle.Width(30).Render("BinaryFile"),
-//	//			m.BinaryFileUpdateInputs.text.View(),
-//	//			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send | tab to enter text\n"),
-//	//		) + "\n"
-//	//		b.WriteString(view)
-//	//	} else {
-//	//		res := m.UpdateResult
-//	//
-//	//		view := fmt.Sprintf(
-//	//			`Enter new text info:
-//	//%s
-//	//%s
-//	//
-//	//%s
-//	//
-//	//%s
-//	//`,
-//	//			inputStyle.Width(30).Render("BinaryFile Name"),
-//	//			m.BinaryFileUpdateInputs.textName[name].View(),
-//	//			res,
-//	//			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send\n"),
-//	//		) + "\n"
-//	//		b.WriteString(view)
-//	//	}
-//	//	return b.String()
-//	return ""
-//}
-//
-//func viewBinaryFileDelete(m BinaryFileModel) string {
-//	var b strings.Builder
-//
-//	if m.Err != nil {
-//		b.WriteString(fmt.Sprintf("Error occured during file deletion: %v", m.Err))
-//	}
-//
-//	view := fmt.Sprintf(
-//		`Enter file name:
-//
-//%s
-//%s
-//
-//%s`,
-//		inputStyle.Width(30).Render("BinaryFile Name"),
-//		m.BinaryFileDeleteInputs[name].View(),
-//		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
-//	)
-//
-//	if m.DeleteResult != "" {
-//		res := m.DeleteResult
-//		view = fmt.Sprintf(
-//			`Enter file name:
-//
-//%s
-//
-//%s`,
-//			res,
-//			helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
-//		) + "\n"
-//		b.WriteString(view)
-//		return b.String()
-//	}
-//	b.WriteString(view)
-//	return b.String()
-//}
-//
-//func (m *BinaryFileModel) NextInput() {
-//	m.FocusedBinaryFile++
-//	if m.FocusedBinaryFile == 2 {
-//		m.FocusedBinaryFile = 0
-//	}
-//}
-//
-//// PrevInput focuses the previous input field.
-//func (m *BinaryFileModel) PrevInput() {
-//	m.FocusedBinaryFile--
-//	// Wrap around
-//	if m.FocusedBinaryFile < 0 {
-//		m.FocusedBinaryFile = 0
-//	}
-//}
-//
+func updateBinaryFileUpdate(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEnter:
+			m.Step = "Binary File_UPDATE"
+			return m, nil
+		}
+	}
+
+	m.FileUpdateInputs[0], cmd = m.FileUpdateInputs[0].Update(msg)
+	return m, cmd
+}
+
+func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			m.Finish = true
+			m.selectedFile = ""
+			return m, tea.Quit
+		case "ctrl+z":
+			m.Step = "DataTypes"
+			m.selectedFile = ""
+		case "enter":
+			if m.selectedFile != "" {
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
+
+				name_ := m.FileUpdateInputs[0].Value()
+				splittedName := strings.Split(m.selectedFile, ".")
+				extension := "." + splittedName[len(splittedName)-1]
+
+				file, err := m.readFile(m.selectedFile)
+				if err != nil {
+					m.Err = err
+					m.selectedFile = ""
+					m.FileUpdateInputs[0].Blur()
+					m.FileUpdateInputs[0].Reset()
+					return m, nil
+				}
+
+				pbUser := converters.UserToPBUser(m.User)
+				f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, Extension: []byte(extension), UpdatedAt: time.Now()}
+
+				pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(f)
+				if err != nil {
+					m.Err = err
+					m.selectedFile = ""
+					m.FileUpdateInputs[0].Blur()
+					m.FileUpdateInputs[0].Reset()
+					return m, nil
+				}
+
+				_, err = m.Client.BinaryFilesClient.Update(ctx, &pb.UpdateBinaryFileRequest{User: pbUser, File: pbBinaryFile})
+				if err != nil {
+					m.Err = err
+					m.selectedFile = ""
+					m.FileUpdateInputs[0].Blur()
+					m.FileUpdateInputs[0].Reset()
+					return m, nil
+				}
+
+				m.UpdateResult = "BinaryFile updated successfully!"
+				m.Step = "Binary File_UPDATE"
+				return m, nil
+			}
+		}
+	}
+
+	if m.selectedFile != "" {
+		return updateBinaryFileUpdate(m, msg)
+	}
+
+	var cmd tea.Cmd
+	m.filepicker, cmd = m.filepicker.Update(msg)
+
+	// Did the user select a file?
+	if didSelect, path := m.filepicker.DidSelectFile(msg); didSelect {
+		// Get the path of the selected file.
+		m.selectedFile = path
+	}
+
+	// Did the user select a disabled file?
+	// This is only necessary to display an error to the user.
+	if didSelect, path := m.filepicker.DidSelectDisabledFile(msg); didSelect {
+		// Let's clear the selectedFile and display an error.
+		m.Err = errors.New(path + " is not valid.")
+		m.selectedFile = ""
+		return m, tea.Batch(cmd, clearErrorAfter(2*time.Second))
+	}
+
+	return m, cmd
+}
+
+func updateBinaryFileGet(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEnter:
+			m.Step = "Binary File_GET"
+			return m, nil
+		}
+	}
+
+	m.FileGetInputs[0], cmd = m.FileGetInputs[0].Update(msg)
+	return m, cmd
+}
+
+func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			m.Finish = true
+			return m, tea.Quit
+		case "ctrl+z":
+			m.GetResult = ""
+			m.Step = "DataTypes"
+		case "enter":
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			name_ := m.FileGetInputs[0].Value()
+
+			pbUser := converters.UserToPBUser(m.User)
+
+			resp, err := m.Client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: pbUser, Name: name_})
+			if err != nil {
+				m.Err = err
+				m.GetResult = ""
+				m.FileGetInputs[0].Reset()
+				return updateBinaryFileGet(m, msg)
+			}
+
+			file, err := converters.PBBinaryFileToBinaryFile(pbUser.GetUserId(), resp.GetFile())
+			if err != nil {
+				m.Err = err
+				m.GetResult = ""
+				m.FileGetInputs[0].Reset()
+				return updateBinaryFileGet(m, msg)
+			}
+
+			home, _ := os.UserHomeDir()
+			path := fmt.Sprintf("%s/Downloads/%s%s", home, name_, file.Extension)
+			f, err := os.Create(path)
+			if err != nil {
+				m.Err = err
+				m.GetResult = ""
+				m.FileGetInputs[0].Reset()
+				return updateBinaryFileGet(m, msg)
+			}
+
+			buf := bytes.NewBuffer(file.File)
+			_, err = buf.WriteTo(f)
+			if err != nil {
+				m.Err = err
+				m.GetResult = ""
+				m.FileGetInputs[0].Reset()
+				return updateBinaryFileGet(m, msg)
+			}
+
+			m.GetResult = fmt.Sprintf("BinaryFile saved to %s!", path)
+			m.Step = "Binary File_GET"
+			m.Err = nil
+			return m, nil
+		}
+		m.GetResult = ""
+
+	}
+	return updateBinaryFileGet(m, msg)
+}
+
+func updateBinaryFileDelete(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEnter:
+			m.Step = "Binary File_DELETE"
+			return m, nil
+		}
+	}
+
+	m.FileDeleteInputs[0], cmd = m.FileDeleteInputs[0].Update(msg)
+	return m, cmd
+}
+
+func (m *BinaryFileModel) UpdateDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			m.Finish = true
+			return m, tea.Quit
+		case "ctrl+z":
+			m.DeleteResult = ""
+			m.Step = "DataTypes"
+		case "enter":
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			name_ := m.FileDeleteInputs[0].Value()
+
+			pbUser := converters.UserToPBUser(m.User)
+
+			_, err := m.Client.BinaryFilesClient.Delete(ctx, &pb.DeleteBinaryFileRequest{User: pbUser, Name: name_})
+			if err != nil {
+				m.Err = err
+				m.DeleteResult = ""
+				m.FileDeleteInputs[0].Reset()
+				return updateBinaryFileDelete(m, msg)
+			}
+
+			m.DeleteResult = "BinaryFile deleted successfully!"
+			m.Step = "Binary File_DELETE"
+			m.Err = nil
+			return m, nil
+		}
+		m.DeleteResult = ""
+
+	}
+	return updateBinaryFileDelete(m, msg)
+}
+
 // readFile reads file by path.
 func (m *BinaryFileModel) readFile(path string) ([]byte, error) {
 	f, err := ioutil.ReadFile(path)

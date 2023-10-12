@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS binary_files (
         user_id UUID,
         name VARCHAR(50) NOT NULL UNIQUE,
         file bytea NOT NULL,
+        extension bytea NOT NULL,
         updated_at TIMESTAMP,
         meta JSONB,
         PRIMARY KEY(file_id),

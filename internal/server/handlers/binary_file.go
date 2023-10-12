@@ -41,6 +41,7 @@ func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileReque
 
 	// get file
 	file := binaryFile.File
+	extenstion := binaryFile.Extension
 
 	// create encoder
 	var buf bytes.Buffer
@@ -52,8 +53,14 @@ func (bf *BinaryFiles) Insert(ctx context.Context, req *pb.InsertBinaryFileReque
 	// encrypt data
 	encData := bf.Security.EncryptData(buf)
 
+	buf.Reset()
+	buf.Write(extenstion)
+
+	encExtension := bf.Security.EncryptData(buf)
+
 	// set encrypted file as File
 	binaryFile.File = encData
+	binaryFile.Extension = encExtension
 
 	// insert new binary file to db
 	err = bf.Repo.InsertBF(ctx, binaryFile)
@@ -85,8 +92,15 @@ func (bf *BinaryFiles) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetBina
 		return nil, status.Errorf(codes.Internal, "error decrypting binary file: %v", err)
 	}
 
+	// decrypt extension
+	decExt, err := bf.Security.DecryptData(binaryFile.Extension)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error decrypting extension: %v", err)
+	}
+
 	// set decrypted file to File
 	binaryFile.File = bytes.Trim(decData, "\"\n")
+	binaryFile.Extension = bytes.Trim(decExt, "\"\n")
 
 	// convert binary file to proto binary file
 	pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(binaryFile)
@@ -113,6 +127,7 @@ func (bf *BinaryFiles) Update(ctx context.Context, req *pb.UpdateBinaryFileReque
 
 	// get file
 	file := binaryFile.File
+	extension := binaryFile.Extension
 
 	// create encoder
 	var buf bytes.Buffer
@@ -123,8 +138,14 @@ func (bf *BinaryFiles) Update(ctx context.Context, req *pb.UpdateBinaryFileReque
 	// encrypt data
 	encData := bf.Security.EncryptData(buf)
 
+	buf.Reset()
+	buf.Write(extension)
+
+	encExtension := bf.Security.EncryptData(buf)
+
 	// set encrypted file as File
 	binaryFile.File = encData
+	binaryFile.Extension = encExtension
 
 	// update record in db
 	updatedBinaryFile, err := bf.Repo.UpdateBF(ctx, binaryFile)
@@ -178,10 +199,12 @@ func (bf *BinaryFiles) List(ctx context.Context, req *pb.ListBinaryFileRequest) 
 	// decrypt files
 	for i, bfFile := range bfs {
 		decData, err := bf.Security.DecryptData(bfFile.File)
+		decExt, err := bf.Security.DecryptData(bfFile.Extension)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error decrypting binary file: %v", err)
 		}
 		bfs[i].File = bytes.Trim(decData, "\"\n")
+		bfs[i].Extension = bytes.Trim(decExt, "\"\n")
 	}
 
 	// converts model binary files to proto binary files

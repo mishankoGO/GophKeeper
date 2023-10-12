@@ -54,8 +54,14 @@ func (c *BinaryFilesClient) Insert(ctx context.Context, req *pb.InsertBinaryFile
 
 	encData := c.Security.EncryptData(buf)
 
+	buf.Reset()
+
+	buf.Write(bf.Extension)
+	encExt := c.Security.EncryptData(buf)
+
 	// set encrypted binary file to binary file
 	bf.File = encData
+	bf.Extension = encExt
 
 	err = c.repo.InsertBF(bf)
 	if err != nil {
@@ -64,6 +70,7 @@ func (c *BinaryFilesClient) Insert(ctx context.Context, req *pb.InsertBinaryFile
 
 	if !c.offline {
 		req.File.File = bytes.Trim(encData, "\"\n")
+		req.File.Extension = bytes.Trim(encExt, "\"\n")
 		resp, err := c.service.Insert(ctx, req)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error inserting binary file: %v", err)
@@ -88,8 +95,13 @@ func (c *BinaryFilesClient) Get(ctx context.Context, req *pb.GetRequest) (*pb.Ge
 			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
 		}
 
+		decExt, err := c.Security.DecryptData(bf.Extension)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
+		}
 		// set decrypted binary file to binary file
 		bf.File = bytes.Trim(decData, "\"\n")
+		bf.Extension = bytes.Trim(decExt, "\"\n")
 
 		protoBinaryFile, err := converters.BinaryFileToPBBinaryFile(bf)
 		if err != nil {
@@ -109,11 +121,15 @@ func (c *BinaryFilesClient) Get(ctx context.Context, req *pb.GetRequest) (*pb.Ge
 		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
 	}
 
+	decExt, err := c.Security.DecryptData(resp.File.Extension)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error decryption extension: %v", err)
+	}
+
 	// set decrypted binary file to binary file
 	resp.File.File = bytes.Trim(decData, "\"\n")
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error retrieving binary file: %v", err)
-	}
+	resp.File.Extension = bytes.Trim(decExt, "\"\n")
+
 	return resp, nil
 }
 
@@ -130,8 +146,14 @@ func (c *BinaryFilesClient) Update(ctx context.Context, req *pb.UpdateBinaryFile
 
 	encData := c.Security.EncryptData(buf)
 
+	buf.Reset()
+	buf.Write(mFile.Extension)
+
+	encExt := c.Security.EncryptData(buf)
+
 	// set encrypted binary file to Binary file
 	mFile.File = encData
+	mFile.Extension = encExt
 
 	_, err = c.repo.UpdateBF(mFile)
 	if err != nil {
@@ -140,6 +162,7 @@ func (c *BinaryFilesClient) Update(ctx context.Context, req *pb.UpdateBinaryFile
 
 	if !c.offline {
 		req.File.File = encData
+		req.File.Extension = encExt
 		resp, err := c.service.Update(ctx, req)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error updating binary file information: %v", err)
@@ -177,17 +200,6 @@ func (c *BinaryFilesClient) List(ctx context.Context, req *pb.ListBinaryFileRequ
 	if err != nil {
 		return nil, nil, status.Errorf(codes.Internal, "error listing binary files: %v", err)
 	}
-
-	//for i, bf := range bfs {
-	//	// decrypt data
-	//	decData, err := c.Security.DecryptData(bf.File)
-	//	if err != nil {
-	//		return nil, nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
-	//	}
-	//
-	//	// set decrypted binary file to File
-	//	bfs[i].File = bytes.Trim(decData, "\"\n")
-	//}
 
 	resp, err := c.service.List(ctx, req)
 	if err != nil {
