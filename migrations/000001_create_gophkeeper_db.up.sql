@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS binary_files (
         name VARCHAR(50) NOT NULL UNIQUE,
         file bytea NOT NULL,
         extension bytea NOT NULL,
-        updated_at TIMESTAMP,
+        updated_at TIMESTAMP with time zone,
         meta JSONB,
         PRIMARY KEY(file_id),
         CONSTRAINT fk_file

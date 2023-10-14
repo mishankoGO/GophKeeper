@@ -240,7 +240,12 @@ func (c *LogPassesClient) Sync(ctx context.Context, req *pb.ListLogPassRequest) 
 
 	// flag which shows which db has the latest data.
 	// if flag set to "server", it means server has fresher data.
-	dataPrimary := "client"
+	var dataPrimary string
+	if c.offline {
+		dataPrimary = "client"
+	} else {
+		dataPrimary = "server"
+	}
 
 	// update cycle
 	for _, clp := range clientLPs {

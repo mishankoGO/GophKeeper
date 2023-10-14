@@ -10,6 +10,7 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/security"
 	"log"
 	"os"
+	"time"
 )
 
 const (
@@ -41,6 +42,7 @@ func main() {
 
 	p := tea.NewProgram(cli.InitialModel(client), tea.WithAltScreen())
 
+	fmt.Println(time.Now())
 	// Run returns the model as a tea.Model.
 	m, err := p.Run()
 	if err != nil {

@@ -383,6 +383,7 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 				f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, Extension: []byte(extension), UpdatedAt: time.Now()}
 
 				pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(f)
+
 				if err != nil {
 					m.Err = err
 					m.selectedFile = ""

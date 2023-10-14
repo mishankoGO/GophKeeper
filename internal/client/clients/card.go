@@ -211,7 +211,12 @@ func (c *CardsClient) Sync(ctx context.Context, req *pb.ListCardRequest) error {
 
 	// flag which shows which db has the latest data.
 	// if flag set to "server", it means server has fresher data.
-	dataPrimary := "client"
+	var dataPrimary string
+	if c.offline {
+		dataPrimary = "client"
+	} else {
+		dataPrimary = "server"
+	}
 
 	// update cycle
 	for _, cc := range clientCs {

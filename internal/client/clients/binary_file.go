@@ -221,7 +221,12 @@ func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequ
 
 	// flag which shows which db has the latest data.
 	// if flag set to "server", it means server has fresher data.
-	dataPrimary := "client"
+	var dataPrimary string
+	if c.offline {
+		dataPrimary = "client"
+	} else {
+		dataPrimary = "server"
+	}
 
 	// update cycle
 	for _, cbf := range clientBFs {
@@ -246,7 +251,6 @@ func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequ
 					if err != nil {
 						return err
 					}
-					dataPrimary = "client"
 				} else {
 					// convert proto binary file to binary file
 					bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
