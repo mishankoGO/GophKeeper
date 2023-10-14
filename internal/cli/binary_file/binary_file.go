@@ -144,7 +144,7 @@ func (m *BinaryFileModel) ViewInsert() string {
 	} else if m.selectedFile == "" {
 		s.WriteString("Pick a file:")
 	} else {
-		return viewFilePicker(*m)
+		return viewFilePicker(m)
 	}
 	s.WriteString("\n\n" + m.filepicker.View() + "\n")
 	return s.String()
@@ -157,7 +157,7 @@ func (m *BinaryFileModel) ViewGet() string {
 	var b strings.Builder
 
 	if m.Err != nil {
-		b.WriteString(fmt.Sprintf("Error occured during card retrieval: %v", m.Err))
+		b.WriteString(fmt.Sprintf("Error occured during file retrieval: %v", m.Err))
 	}
 
 	view := fmt.Sprintf(
@@ -168,7 +168,7 @@ func (m *BinaryFileModel) ViewGet() string {
 
 %s`,
 		inputStyle.Width(30).Render("File Name"),
-		m.FileGetInputs[name].View(),
+		m.FileGetInputs[0].View(),
 		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 	)
 
@@ -255,7 +255,7 @@ func (m *BinaryFileModel) ViewUpdate() string {
 	return s.String()
 }
 
-func viewFilePicker(m BinaryFileModel) string {
+func viewFilePicker(m *BinaryFileModel) string {
 	view := fmt.Sprintf(`
 Selected file: %s
 
@@ -357,6 +357,9 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+z":
 			m.Step = "DataTypes"
 			m.selectedFile = ""
+			m.InsertResult = ""
+			m.FileInsertInputs[0].Reset()
+			return m, nil
 		case "enter":
 			if m.selectedFile != "" {
 				ctx, cancel := context.WithCancel(context.Background())
@@ -370,6 +373,7 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.Err = err
 					m.selectedFile = ""
+					m.InsertResult = ""
 					m.FileInsertInputs[0].Blur()
 					m.FileInsertInputs[0].Reset()
 					return m, nil
@@ -382,6 +386,7 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.Err = err
 					m.selectedFile = ""
+					m.InsertResult = ""
 					m.FileInsertInputs[0].Blur()
 					m.FileInsertInputs[0].Reset()
 					return m, nil
@@ -391,13 +396,18 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.Err = err
 					m.selectedFile = ""
-					m.FileInsertInputs[0].Blur()
+					m.InsertResult = ""
+					//m.FileInsertInputs[0].Blur()
 					m.FileInsertInputs[0].Reset()
 					return m, nil
 				}
 
+				//m.selectedFile = ""
 				m.InsertResult = "BinaryFile inserted successfully!"
 				m.Step = "Binary File_INSERT"
+				m.FileInsertInputs[0].Reset()
+				m.FileInsertInputs[0].Focus()
+				m.filepicker.FileSelected = ""
 				return m, nil
 			}
 		}
@@ -455,6 +465,7 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+z":
 			m.Step = "DataTypes"
 			m.selectedFile = ""
+			m.FileUpdateInputs[0].Reset()
 		case "enter":
 			if m.selectedFile != "" {
 				ctx, cancel := context.WithCancel(context.Background())
@@ -496,6 +507,9 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				m.UpdateResult = "BinaryFile updated successfully!"
 				m.Step = "Binary File_UPDATE"
+				m.FileUpdateInputs[0].Reset()
+				m.selectedFile = ""
+				m.filepicker.FileSelected = ""
 				return m, nil
 			}
 		}
@@ -552,6 +566,7 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+z":
 			m.GetResult = ""
 			m.Step = "DataTypes"
+			m.FileGetInputs[0].Reset()
 		case "enter":
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -598,6 +613,7 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.GetResult = fmt.Sprintf("BinaryFile saved to %s!", path)
 			m.Step = "Binary File_GET"
 			m.Err = nil
+			m.FileGetInputs[0].Reset()
 			return m, nil
 		}
 		m.GetResult = ""
@@ -632,6 +648,7 @@ func (m *BinaryFileModel) UpdateDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+z":
 			m.DeleteResult = ""
 			m.Step = "DataTypes"
+			m.FileDeleteInputs[0].Reset()
 		case "enter":
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

@@ -581,7 +581,7 @@ func viewTextInsert(m TextModel) string {
 			m.TextInsertInputs.textName[name].View(),
 			inputStyle.Width(30).Render("Text"),
 			m.TextInsertInputs.text.View(),
-			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send | tab to enter text\n"),
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+q to send | tab to enter text\n"),
 		) + "\n"
 		b.WriteString(view)
 	} else {
@@ -599,7 +599,7 @@ func viewTextInsert(m TextModel) string {
 			inputStyle.Width(30).Render("Text Name"),
 			m.TextInsertInputs.textName[name].View(),
 			res,
-			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send\n"),
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+q to send\n"),
 		) + "\n"
 		b.WriteString(view)
 	}
@@ -628,7 +628,7 @@ func viewTextUpdate(m TextModel) string {
 			m.TextUpdateInputs.textName[name].View(),
 			inputStyle.Width(30).Render("Text"),
 			m.TextUpdateInputs.text.View(),
-			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send | tab to enter text\n"),
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+q to send | tab to enter text\n"),
 		) + "\n"
 		b.WriteString(view)
 	} else {
@@ -646,7 +646,7 @@ func viewTextUpdate(m TextModel) string {
 			inputStyle.Width(30).Render("Text Name"),
 			m.TextUpdateInputs.textName[name].View(),
 			res,
-			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+s to send\n"),
+			helpStyle.Render("\nctrl+c to quit | ctrl+z to return | ctrl+q to send\n"),
 		) + "\n"
 		b.WriteString(view)
 	}

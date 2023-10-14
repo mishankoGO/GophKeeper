@@ -127,6 +127,9 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+z":
 			m.Step = "index"
+			for i := 0; i < len(m.RegisterInputs); i++ {
+				m.RegisterInputs[i].Reset()
+			}
 			return m, nil
 
 		// Set focus to next input
@@ -167,6 +170,11 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				user := converters.PBUserToUser(regResp.GetUser())
 				m.User = user
 				m.Step = "index"
+				for i := 0; i < len(m.RegisterInputs); i++ {
+					// Remove focused state
+					m.RegisterInputs[i].Reset()
+				}
+				m.RegisterFocusIndex = 0
 				return m, nil
 			}
 
@@ -262,6 +270,9 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+z":
 			m.Step = "index"
+			for i := 0; i < len(m.LoginInputs); i++ {
+				m.LoginInputs[i].Reset()
+			}
 			return m, nil
 
 		// Set focus to next input
@@ -328,6 +339,10 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.User = user
 				m.Finish = true
 				m.Step = "Tab"
+				for i := 0; i < len(m.LoginInputs); i++ {
+					m.LoginInputs[i].Reset()
+				}
+				m.LoginFocusIndex = 0
 				return m, tea.ClearScreen
 			}
 

@@ -139,7 +139,7 @@ func (r *DBRepository) InsertBF(bf *binary_files.Files) error {
 		}
 
 		err = b.Put([]byte(bf.Name), bfBytes)
-		return nil
+		return err
 	})
 	if err != nil {
 		return fmt.Errorf("error inserting new binary file: %w", err)
@@ -184,7 +184,7 @@ func (r *DBRepository) UpdateBF(bf *binary_files.Files) (*binary_files.Files, er
 		if err != nil {
 			return err
 		}
-		return nil
+		return err
 	})
 
 	if err != nil {
