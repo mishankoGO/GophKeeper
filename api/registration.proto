@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package api;
+
+option go_package = "github.com/mishankoGO/GophKeeper/api";
+
+// Credential represents credential instance.
+message Credential {
+  string login = 1; // user login
+  string password = 2; // user password
+}
+
+// User represents user instance.
+message User {
+  string user_id = 1; // user id
+  string login = 2; // user login
+  google.protobuf.Timestamp created_at = 3; // time of creation
+}
+
+// Credentials represents credentials server interface
+service Credentials {
+  rpc Register(RegisterRequest) returns (RegisterResponse); // register user
+}
+
+// Register request.
+message RegisterRequest {
+  Credential cred = 1;
+}
+
+// Register response.
+message RegisterResponse {
+  string error = 1;
+  User user = 2;
+}
