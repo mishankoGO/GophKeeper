@@ -6,10 +6,9 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	mrand "math/rand"
-	//"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	mrand "math/rand"
 )
 
 // generateRandom generates random sequence.

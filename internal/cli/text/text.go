@@ -1,59 +1,66 @@
+// Package text offers interface to work with text tea model.
 package text
 
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/texts"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"strings"
-	"time"
 )
 
+// fields to fill.
 const (
 	name = iota
 )
 
+// used colors.
 const (
-	hotPink  = lipgloss.Color("#FF06B7")
-	darkGray = lipgloss.Color("#767676")
+	hotPink = lipgloss.Color("#FF06B7")
 )
 
+// used styles.
 var (
-	inputStyle    = lipgloss.NewStyle().Foreground(hotPink)
-	continueStyle = lipgloss.NewStyle().Foreground(darkGray)
-	blurredStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	helpStyle     = blurredStyle.Copy()
+	inputStyle   = lipgloss.NewStyle().Foreground(hotPink)
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle.Copy()
 )
 
+// TextInputs struct contains text and text name.
 type TextInputs struct {
-	textName []textinput.Model
-	text     textarea.Model
+	textName []textinput.Model // field for text name
+	text     textarea.Model    // input text
 }
 
+// TextModel struct for current TextModel state.
 type TextModel struct {
-	TextInsertInputs TextInputs
-	TextGetInputs    []textinput.Model
-	TextUpdateInputs TextInputs
-	TextDeleteInputs []textinput.Model
-	GetResult        string
-	InsertResult     string
-	UpdateResult     string
-	DeleteResult     string
-	FocusedText      int
-	Client           *client.Client
-	User             *users.User
-	Finish           bool
-	Step             string
-	Err              error
+	TextInsertInputs TextInputs        // insert inputs
+	TextGetInputs    []textinput.Model // get inputs
+	TextUpdateInputs TextInputs        // update inputs
+	TextDeleteInputs []textinput.Model // delete inputs
+	GetResult        string            // get results
+	InsertResult     string            // insert results
+	UpdateResult     string            // update results
+	DeleteResult     string            // delete results
+	FocusedText      int               // text field index
+	Client           *client.Client    // client instance
+	User             *users.User       // user instance
+	Finish           bool              // flag if tui is closed
+	Step             string            // current step
+	Err              error             // occurred error
 }
 
+// NewTextModel creates new TextModel instance.
 func NewTextModel(client *client.Client) TextModel {
 	var textInsertInputs = TextInputs{textName: make([]textinput.Model, 1)}
 	var textUpdateInputs = TextInputs{textName: make([]textinput.Model, 1)}
@@ -111,10 +118,12 @@ func NewTextModel(client *client.Client) TextModel {
 	return textModel
 }
 
+// Init method for tea model interface.
 func (m *TextModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update method updated TextModel state.
 func (m *TextModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Step == "Text_INSERT" {
 		return updateTextInsert(msg, m)
@@ -129,6 +138,7 @@ func (m *TextModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// updateTextGet updates get page state.
 func updateTextGet(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.TextGetInputs))
 	switch msg := msg.(type) {
@@ -208,6 +218,7 @@ func updateTextGet(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateTextDelete updates delete page state.
 func updateTextDelete(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.TextDeleteInputs))
 	switch msg := msg.(type) {
@@ -288,6 +299,7 @@ func updateTextDelete(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateTextInsert updates insert page state.
 func updateTextInsert(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.TextInsertInputs.textName))
 	switch msg := msg.(type) {
@@ -398,6 +410,7 @@ func updateTextInsert(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateTextUpdate updates update page state.
 func updateTextUpdate(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.TextUpdateInputs.textName))
 	switch msg := msg.(type) {
@@ -508,6 +521,7 @@ func updateTextUpdate(msg tea.Msg, m *TextModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View method displays TextModel view.
 func (m TextModel) View() string {
 	if m.Step == "Text_INSERT" {
 		return viewTextInsert(m)
@@ -520,6 +534,7 @@ func (m TextModel) View() string {
 	}
 }
 
+// viewTextGet displays get page.
 func viewTextGet(m TextModel) string {
 	var b strings.Builder
 
@@ -559,6 +574,7 @@ func viewTextGet(m TextModel) string {
 	return b.String()
 }
 
+// viewTextInsert displays insert page.
 func viewTextInsert(m TextModel) string {
 	var b strings.Builder
 
@@ -606,6 +622,7 @@ func viewTextInsert(m TextModel) string {
 	return b.String()
 }
 
+// viewTextUpdate displays update page.
 func viewTextUpdate(m TextModel) string {
 	var b strings.Builder
 
@@ -653,6 +670,7 @@ func viewTextUpdate(m TextModel) string {
 	return b.String()
 }
 
+// viewTextDelete displays delete page.
 func viewTextDelete(m TextModel) string {
 	var b strings.Builder
 
@@ -690,6 +708,7 @@ func viewTextDelete(m TextModel) string {
 	return b.String()
 }
 
+// NextInput is a helper function to increase focus cursor.
 func (m *TextModel) NextInput() {
 	m.FocusedText++
 	if m.FocusedText == 2 {

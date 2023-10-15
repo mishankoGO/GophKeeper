@@ -1,3 +1,4 @@
+// Package log_pass offers interface to work with log pass tea model.
 package log_pass
 
 import (
@@ -54,7 +55,7 @@ type LogPassModel struct {
 	Err                 error             // occurred error
 }
 
-// NewLogPassModel j
+// NewLogPassModel creates new LogPassModel instance.
 func NewLogPassModel(client *client.Client) LogPassModel {
 	var logPassInsertInputs = make([]textinput.Model, 3)
 	var logPassUpdateInputs = make([]textinput.Model, 3)
@@ -128,10 +129,12 @@ func NewLogPassModel(client *client.Client) LogPassModel {
 	return logPassModel
 }
 
+// Init method for tea model interface.
 func (m *LogPassModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update method updates logpass model state.
 func (m *LogPassModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Step == "LogPass_INSERT" {
 		return updateLogPassInsert(msg, m)
@@ -142,10 +145,10 @@ func (m *LogPassModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.Step == "LogPass_DELETE" {
 		return updateLogPassDelete(msg, m)
 	}
-	//m.Step = "LogPass_GET"
 	return m, nil
 }
 
+// updateLogPassGet updates get page state.
 func updateLogPassGet(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.LogPassGetInputs))
 	switch msg := msg.(type) {
@@ -227,6 +230,7 @@ func updateLogPassGet(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateLogPassDelete updates delete page state.
 func updateLogPassDelete(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.LogPassDeleteInputs))
 	switch msg := msg.(type) {
@@ -304,6 +308,7 @@ func updateLogPassDelete(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateLogPassInsert updates insert page state.
 func updateLogPassInsert(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.LogPassInsertInputs))
 	switch msg := msg.(type) {
@@ -402,6 +407,7 @@ func updateLogPassInsert(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateLogPassUpdate updates update page state.
 func updateLogPassUpdate(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.LogPassUpdateInputs))
 	switch msg := msg.(type) {
@@ -499,6 +505,7 @@ func updateLogPassUpdate(msg tea.Msg, m *LogPassModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View method displays logpass model state.
 func (m LogPassModel) View() string {
 	if m.Step == "LogPass_INSERT" {
 		return viewLogPassInsert(m)
@@ -511,6 +518,7 @@ func (m LogPassModel) View() string {
 	}
 }
 
+// viewLogPassGet for get step.
 func viewLogPassGet(m LogPassModel) string {
 	var b strings.Builder
 
@@ -557,6 +565,7 @@ func viewLogPassGet(m LogPassModel) string {
 	return b.String()
 }
 
+// viewLogPassDelete for delete step.
 func viewLogPassDelete(m LogPassModel) string {
 	var b strings.Builder
 
@@ -594,6 +603,7 @@ func viewLogPassDelete(m LogPassModel) string {
 	return b.String()
 }
 
+// viewLogPassInsert for insert step.
 func viewLogPassInsert(m LogPassModel) string {
 	var b strings.Builder
 
@@ -656,6 +666,7 @@ func viewLogPassInsert(m LogPassModel) string {
 
 }
 
+// viewLogPassUpdate for update step.
 func viewLogPassUpdate(m LogPassModel) string {
 	var b strings.Builder
 
@@ -717,11 +728,12 @@ func viewLogPassUpdate(m LogPassModel) string {
 	return b.String()
 }
 
+// NextInput is a helper function to increase focus cursor.
 func (m *LogPassModel) NextInput() {
 	m.FocusedLogPass = (m.FocusedLogPass + 1) % len(m.LogPassInsertInputs)
 }
 
-// PrevInput focuses the previous input field
+// PrevInput focuses the previous input field.
 func (m *LogPassModel) PrevInput() {
 	m.FocusedLogPass--
 	// Wrap around

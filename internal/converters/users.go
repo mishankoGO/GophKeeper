@@ -2,11 +2,11 @@
 package converters
 
 import (
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/texts"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // UserToPBUser converts model user to proto user.

@@ -31,28 +31,6 @@ func (i *AuthInterceptor) getToken() string {
 	return i.accessToken
 }
 
-//func (i *AuthInterceptor) scheduleRefreshToken(refreshDuration time.Duration) error {
-//	err := i.refreshToken()
-//	if err != nil {
-//		return fmt.Errorf("error refreshing token: %w", err)
-//	}
-//
-//	go func() {
-//		wait := refreshDuration
-//		for {
-//			time.Sleep(wait)
-//			err := i.refreshToken()
-//			if err != nil {
-//				wait = time.Second
-//			} else {
-//				wait = refreshDuration
-//			}
-//		}
-//	}()
-//
-//	return nil
-//}
-
 // Unary method represents unary client interceptor.
 func (i *AuthInterceptor) Unary() grpc.UnaryClientInterceptor {
 	return func(

@@ -1,39 +1,44 @@
+// Package datatype offers interface to work with datatype tea model.
 package datatype
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
 )
 
+// used styles.
 var (
 	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	helpStyle    = blurredStyle.Copy()
 )
 
+// methods to use with data.
 var dataTypes = []string{"GET", "UPDATE", "INSERT", "DELETE"}
 
+// DataTypeModel is a struct for current datatype model state.
 type DataTypeModel struct {
-	Finish bool
-	Choice string
-	Step   string
-	Cursor int
-	Tab    string
+	Finish bool   // flag if user terminated the process
+	Choice string // current choice
+	Step   string // current step
+	Cursor int    // cursor position
+	Tab    string // which tab was chosen
 }
 
+// NewDataTypeModel function create new datatype model instance.
 func NewDataTypeModel() DataTypeModel {
-	return DataTypeModel{
-		//Step: "DataTypes"
-	}
+	return DataTypeModel{}
 }
 
-/* DATATYPE */
-
+// Init method for tea Model interface.
 func (m *DataTypeModel) Init() tea.Cmd {
 	return textinput.Blink
 }
+
+// Update method updates current datatype model state.
 func (m *DataTypeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -66,6 +71,7 @@ func (m *DataTypeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View method displays datatype model view.
 func (m DataTypeModel) View() string {
 	s := strings.Builder{}
 	s.WriteString(fmt.Sprintf("What do you want to do with %s?\n\n", m.Tab))

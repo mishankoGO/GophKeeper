@@ -4,6 +4,14 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+	"strings"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/mishankoGO/GophKeeper/config"
 	"github.com/mishankoGO/GophKeeper/internal/client/clients"
 	"github.com/mishankoGO/GophKeeper/internal/client/interceptors"
@@ -12,12 +20,6 @@ import (
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
 	"github.com/mishankoGO/GophKeeper/internal/security"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"log"
-	"net"
-	"strings"
-	"time"
 )
 
 // Client contains configuration file, and client for different kinds of data.
@@ -122,6 +124,7 @@ func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error)
 	}
 }
 
+// Close method closes connections.
 func (c *Client) Close() {
 	for _, conn := range c.conns {
 		conn.Close()
@@ -129,6 +132,7 @@ func (c *Client) Close() {
 	c.UsersClient.Close()
 }
 
+// Sync method syncs data between server and client.
 func (c *Client) Sync(user *users.User) error {
 
 	if c.connected {
@@ -170,6 +174,7 @@ func (c *Client) Sync(user *users.User) error {
 	return nil
 }
 
+// ping function checks if client is connected to server.
 func ping(address string) bool {
 	_, err := net.DialTimeout("tcp", address, 2*time.Second)
 	if err != nil {
@@ -178,6 +183,7 @@ func ping(address string) bool {
 	return true
 }
 
+// SetSecurity method sets security attribute after login.
 func (c *Client) SetSecurity(security *security.Security) {
 	c.CardsClient.SetSecurity(security)
 	c.TextsClient.SetSecurity(security)

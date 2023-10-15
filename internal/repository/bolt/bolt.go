@@ -1,9 +1,14 @@
+// Package bolt contains interface to work with local bolt database.
 package bolt
 
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/boltdb/bolt"
+
 	"github.com/mishankoGO/GophKeeper/config"
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/models/binary_files"
@@ -11,15 +16,15 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 	"github.com/mishankoGO/GophKeeper/internal/models/texts"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"strings"
-	"time"
 )
 
+// DBRepository contains config and bolt db struct.
 type DBRepository struct {
 	conf *config.Config
 	DB   *bolt.DB
 }
 
+// NewDBRepository creates new bolt Repository instance.
 func NewDBRepository(conf *config.Config) (interfaces.Repository, error) {
 	name := fmt.Sprintf("internal/repository/bolt/backup/gophKeeper.db")
 	db, err := bolt.Open(name, 0600, nil)
@@ -56,10 +61,12 @@ func NewDBRepository(conf *config.Config) (interfaces.Repository, error) {
 	return &DBRepository{conf: conf, DB: db}, nil
 }
 
+// Close method closes db connection.
 func (r *DBRepository) Close() error {
 	return r.DB.Close()
 }
 
+// InsertUser method inserts user to db.
 func (r *DBRepository) InsertUser(cred *users.Credential, user *users.User) error {
 	err := r.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Credentials"))

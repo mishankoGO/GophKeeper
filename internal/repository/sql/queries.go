@@ -1,3 +1,4 @@
+// Package sql contains all the sql queries needed.
 package sql
 
 // Registration and login.

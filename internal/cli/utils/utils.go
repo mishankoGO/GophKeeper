@@ -1,3 +1,4 @@
+// Package utils contains validators for bank card inputs.
 package utils
 
 import (
@@ -6,7 +7,7 @@ import (
 	"strings"
 )
 
-// Validator functions to ensure valid input
+// CCNValidator function to ensure valid card number input.
 func CCNValidator(s string) error {
 	// Credit Card Number should a string less than 20 digits
 	// It should include 16 integers and 3 spaces
@@ -31,6 +32,7 @@ func CCNValidator(s string) error {
 	return err
 }
 
+// EXPValidator function to ensure valid card expiration date input.
 func EXPValidator(s string) error {
 	// The 3 character should be a slash (/)
 	// The rest should be numbers
@@ -48,6 +50,7 @@ func EXPValidator(s string) error {
 	return nil
 }
 
+// CVVValidator function to ensure valid cvv input.
 func CVVValidator(s string) error {
 	// The CVV should be a number of 3 digits
 	// Since the input will already ensure that the CVV is a string of length 3,

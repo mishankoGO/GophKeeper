@@ -1,11 +1,15 @@
+// Package tab offers interface to work with tabs.
+// Tabs consist of Text tab, Card tab, BinaryFile tab and LogPass tab.
 package tab
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
 )
 
+// used styles.
 var (
 	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
@@ -18,29 +22,33 @@ var (
 	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 0).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 )
 
+// tabs and its contents.
 var tabs = []string{"Card", "Text", "Binary File", "LogPass"}
 var tabContent = []string{"Bank card data", "Text data", "Binary File data", "LogPass data"}
 
+// TabModel struct for current TabModel state.
 type TabModel struct {
-	Tabs       []string
-	TabContent []string
-	ActiveTab  int
-	Step       string
-	Finish     bool
+	Tabs       []string // available tabs
+	TabContent []string // tabs content
+	ActiveTab  int      // current active tab
+	Step       string   // current step
+	Finish     bool     // flag if tui is closed
 }
 
+// NewTabModel creates new TabModel instance.
 func NewTabModel() TabModel {
 	return TabModel{
-		//Step:       "Tab",
 		Tabs:       tabs,
 		TabContent: tabContent,
 	}
 }
 
-/* TAB */
+// Init method for tab tea model interface.
 func (m *TabModel) Init() tea.Cmd {
 	return nil
 }
+
+// Update method updates tab model state.
 func (m *TabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -62,6 +70,7 @@ func (m *TabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View method displays tab model view.
 func (m TabModel) View() string {
 	doc := strings.Builder{}
 
@@ -99,6 +108,7 @@ func (m TabModel) View() string {
 	return docStyle.Render(doc.String())
 }
 
+// max helper function to find max integer.
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -106,6 +116,7 @@ func max(a, b int) int {
 	return b
 }
 
+// min helper function to find min integer.
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -113,6 +124,7 @@ func min(a, b int) int {
 	return b
 }
 
+// tabBorderWithBottom function creates borders.
 func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
 	border := lipgloss.RoundedBorder()
 	border.BottomLeft = left

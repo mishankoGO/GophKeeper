@@ -11,23 +11,27 @@ package clients
 import (
 	"context"
 	"fmt"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/pkg/hash"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
+// UsersClient struct represents current UsersClient state.
 type UsersClient struct {
-	token              string
-	repo               interfaces.Repository
-	usersService       pb.UsersClient
-	credentialsService pb.CredentialsClient
-	offline            bool
+	token              string                // jwt token
+	repo               interfaces.Repository // repository instance
+	usersService       pb.UsersClient        // protobuf users client
+	credentialsService pb.CredentialsClient  // protobuf credentials client
+	offline            bool                  // offline or online
 }
 
+// NewUsersClient function creates new UsersClient instance.
 func NewUsersClient(cc *grpc.ClientConn, repo interfaces.Repository) *UsersClient {
 	if cc != nil {
 		usersService := pb.NewUsersClient(cc)
@@ -37,10 +41,12 @@ func NewUsersClient(cc *grpc.ClientConn, repo interfaces.Repository) *UsersClien
 	return &UsersClient{offline: true, repo: repo}
 }
 
+// GetToken method returns token.
 func (u *UsersClient) GetToken() string {
 	return u.token
 }
 
+// Close method closes repository connection.
 func (u *UsersClient) Close() error {
 	return u.repo.Close()
 }

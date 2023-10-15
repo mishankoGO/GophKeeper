@@ -1,3 +1,4 @@
+// Package cli contains main client model.
 package cli
 
 import (
@@ -16,25 +17,27 @@ import (
 	"strings"
 )
 
+// Model struct represents current model state.
 type Model struct {
-	LoginModel      *login.LoginModel
-	RegisterModel   *login.RegisterModel
-	CardModel       *card.CardModel
-	TextModel       *text.TextModel
-	BinaryFileModel *binary_file.BinaryFileModel
-	LogPassModel    *log_pass.LogPassModel
-	BuildModel      *build_version.BuildModel
-	TabModel        *tab.TabModel
-	IndexModel      *index.IndexModel
-	DataTypeModel   *datatype.DataTypeModel
-	Cursor          int
-	Finish          bool
-	Err             error
-	Step            string
-	User            *users.User
-	Client          *client.Client
+	LoginModel      *login.LoginModel            // login model instance
+	RegisterModel   *login.RegisterModel         // register model instance
+	CardModel       *card.CardModel              // card model instance
+	TextModel       *text.TextModel              // text model instance
+	BinaryFileModel *binary_file.BinaryFileModel // binary file model instance
+	LogPassModel    *log_pass.LogPassModel       // log pass model instance
+	BuildModel      *build_version.BuildModel    // build model instance
+	TabModel        *tab.TabModel                // tab model instance
+	IndexModel      *index.IndexModel            // index model instance
+	DataTypeModel   *datatype.DataTypeModel      // datatype model instance
+	Cursor          int                          // current cursor
+	Finish          bool                         // flag if tui is closed
+	Err             error                        // occurred error
+	Step            string                       // current step
+	User            *users.User                  // user instance
+	Client          *client.Client               // client instance
 }
 
+// InitialModel creates new Model instance.
 func InitialModel(client *client.Client) *Model {
 
 	loginModel := login.NewLoginModel(client)
@@ -66,7 +69,7 @@ func InitialModel(client *client.Client) *Model {
 	return &m
 }
 
-/* MODEL */
+// Init method for tea model interface.
 func (m *Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		m.LoginModel.Init(),
@@ -84,6 +87,7 @@ func (m *Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// Update method updates client model state.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Step == "index" {
 		m.IndexModel.Step = "index"
@@ -161,6 +165,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View method displays client model view.
 func (m Model) View() string {
 	if m.Step == "Login" {
 		return m.LoginModel.View()
@@ -184,6 +189,7 @@ func (m Model) View() string {
 	return m.IndexModel.View()
 }
 
+// GetUser method returns current user.
 func (m Model) GetUser() *users.User {
 	return m.User
 }

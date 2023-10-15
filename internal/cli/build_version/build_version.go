@@ -1,33 +1,34 @@
+// Package build_version offers an interface to work with build version tea Model.
 package build_version
 
 import (
 	"fmt"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
 )
 
+// version and build date values
 var (
 	Version   = ""
 	BuildDate = ""
 )
 
+// used styles
 var (
-	focusedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	noStyle       = lipgloss.NewStyle()
-	helpStyle     = blurredStyle.Copy()
-	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-	cursorStyle   = focusedStyle.Copy()
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle.Copy()
 )
 
+// BuildModel is a struct for current build version model state.
 type BuildModel struct {
-	Finish bool
-	Err    error
-	Step   string
+	Finish bool   // flag if user terminated the process
+	Err    error  // occurred error
+	Step   string // current step
 }
 
+// NewBuildModel function creates new BuildModel instance.
 func NewBuildModel() BuildModel {
 
 	return BuildModel{
@@ -35,11 +36,12 @@ func NewBuildModel() BuildModel {
 	}
 }
 
-/* Build */
+// Init method for tea Model interface.
 func (m *BuildModel) Init() tea.Cmd {
 	return nil
 }
 
+// Update method updates BuildModel state.
 func (m *BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -58,6 +60,7 @@ func (m *BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View method displays build model view.
 func (m BuildModel) View() string {
 	var b strings.Builder
 

@@ -12,16 +12,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
-	"github.com/mishankoGO/GophKeeper/internal/converters"
-	"github.com/mishankoGO/GophKeeper/internal/models/cards"
-	"github.com/mishankoGO/GophKeeper/internal/security"
-	"github.com/mishankoGO/GophKeeper/pkg/util"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/mishankoGO/GophKeeper/internal/client/interfaces"
+	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/cards"
+	"github.com/mishankoGO/GophKeeper/internal/security"
+	"github.com/mishankoGO/GophKeeper/pkg/util"
 )
 
 // CardsClient contains cards client service.

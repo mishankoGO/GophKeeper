@@ -1,3 +1,5 @@
+// Package binary_file offers an interface to work with binary files tea Model.
+// BUG(Михаил Михайлов): странно работает выбор файлов. Нужно нажат стрелки влево вправо, а потом немного подвигать окно терминала.
 package binary_file
 
 import (
@@ -5,55 +7,55 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/binary_files"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"io/ioutil"
-	"os"
-	"strings"
-	"time"
 )
 
+// used colors
 const (
-	name = iota
+	hotPink = lipgloss.Color("#FF06B7")
 )
 
-const (
-	hotPink  = lipgloss.Color("#FF06B7")
-	darkGray = lipgloss.Color("#767676")
-)
-
+// used styles
 var (
-	inputStyle    = lipgloss.NewStyle().Foreground(hotPink)
-	continueStyle = lipgloss.NewStyle().Foreground(darkGray)
-	blurredStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	helpStyle     = blurredStyle.Copy()
+	inputStyle   = lipgloss.NewStyle().Foreground(hotPink)
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle.Copy()
 )
 
+// BinaryFileModel is a struct for current binary model state.
 type BinaryFileModel struct {
 	FileInsertInputs []textinput.Model // insert page
 	FileGetInputs    []textinput.Model // get page
 	FileDeleteInputs []textinput.Model // delete page
 	FileUpdateInputs []textinput.Model // update page
-	filepicker       filepicker.Model
-	selectedFile     string
-	Finish           bool
-	Step             string
-	User             *users.User
-	InsertResult     string
-	GetResult        string
-	DeleteResult     string
-	UpdateResult     string
-	Client           *client.Client
-	Err              error
+	filepicker       filepicker.Model  // file picker instance
+	selectedFile     string            // currently selected file
+	Finish           bool              // flag if user terminated the process
+	Step             string            // current step
+	User             *users.User       // user instance
+	InsertResult     string            // result of insertion
+	GetResult        string            // result of retrieval
+	DeleteResult     string            // result of deletion
+	UpdateResult     string            // result of update
+	Client           *client.Client    // client instance
+	Err              error             // occurred error
 }
 
+// NewBinaryFileModel function creates new BinaryFileModel instance.
 func NewBinaryFileModel(client *client.Client) BinaryFileModel {
 	var fileInsertInputs = make([]textinput.Model, 1)
 	fileInsertInputs[0] = textinput.New()
@@ -107,19 +109,23 @@ func NewBinaryFileModel(client *client.Client) BinaryFileModel {
 	return m
 }
 
+// clearErrorMsg for filepicker errors.
 type clearErrorMsg struct{}
 
+// clearErrorAfter function clears error after t duration.
 func clearErrorAfter(t time.Duration) tea.Cmd {
 	return tea.Tick(t, func(_ time.Time) tea.Msg {
 		return clearErrorMsg{}
 	})
 }
 
+// Init method for tea Model interface.
 func (m *BinaryFileModel) Init() tea.Cmd {
 	cmds := []tea.Cmd{m.filepicker.Init(), textinput.Blink}
 	return tea.Batch(cmds...)
 }
 
+// View method displays view according to step.
 func (m *BinaryFileModel) View() string {
 	if m.Step == "Binary File_INSERT" {
 		return m.ViewInsert()
@@ -133,6 +139,7 @@ func (m *BinaryFileModel) View() string {
 	return m.ViewGet()
 }
 
+// ViewInsert method for insert step.
 func (m *BinaryFileModel) ViewInsert() string {
 	if m.Finish {
 		return ""
@@ -150,6 +157,7 @@ func (m *BinaryFileModel) ViewInsert() string {
 	return s.String()
 }
 
+// ViewGet method for get step.
 func (m *BinaryFileModel) ViewGet() string {
 	if m.Finish {
 		return ""
@@ -172,6 +180,7 @@ func (m *BinaryFileModel) ViewGet() string {
 		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 	)
 
+	// if GetResult is empty then the view is different
 	if m.GetResult != "" {
 		file := m.GetResult
 
@@ -194,6 +203,7 @@ func (m *BinaryFileModel) ViewGet() string {
 	return b.String()
 }
 
+// ViewDelete method for delete step.
 func (m *BinaryFileModel) ViewDelete() string {
 	if m.Finish {
 		return ""
@@ -212,7 +222,7 @@ func (m *BinaryFileModel) ViewDelete() string {
 
 %s`,
 		inputStyle.Width(30).Render("File Name"),
-		m.FileDeleteInputs[name].View(),
+		m.FileDeleteInputs[0].View(),
 		helpStyle.Render("\nctrl+c to quit | ctrl+z to return\n"),
 	)
 
@@ -238,6 +248,7 @@ func (m *BinaryFileModel) ViewDelete() string {
 	return b.String()
 }
 
+// ViewUpdate method for update step.
 func (m *BinaryFileModel) ViewUpdate() string {
 	if m.Finish {
 		return ""
@@ -255,6 +266,7 @@ func (m *BinaryFileModel) ViewUpdate() string {
 	return s.String()
 }
 
+// viewFilePicker function shows updated filepicker after insertion.
 func viewFilePicker(m *BinaryFileModel) string {
 	view := fmt.Sprintf(`
 Selected file: %s
@@ -286,6 +298,7 @@ Selected file: %s
 	return view
 }
 
+// viewFilePickerUpdate function shows updated filepicker after update.
 func viewFilePickerUpdate(m BinaryFileModel) string {
 	view := fmt.Sprintf(`
 Selected file: %s
@@ -317,6 +330,7 @@ Selected file: %s
 	return view
 }
 
+// Update method for tea Model interface.
 func (m *BinaryFileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Step == "Binary File_INSERT" {
 		return m.UpdateInsert(msg)
@@ -327,9 +341,10 @@ func (m *BinaryFileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.Step == "Binary File_UPDATE" {
 		return m.UpdateUpdate(msg)
 	}
-	return m, nil
+	return m.UpdateGet(msg)
 }
 
+// updateBinaryFileInsert function updates insert inputs.
 func updateBinaryFileInsert(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -346,6 +361,7 @@ func updateBinaryFileInsert(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd
 	return m, cmd
 }
 
+// UpdateInsert method to update insert view.
 func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -365,10 +381,12 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
+				// get name and extension
 				name_ := m.FileInsertInputs[0].Value()
 				splittedName := strings.Split(m.selectedFile, ".")
 				extension := "." + splittedName[len(splittedName)-1]
 
+				// read file
 				file, err := m.readFile(m.selectedFile)
 				if err != nil {
 					m.Err = err
@@ -379,11 +397,10 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
+				// create proto file
 				pbUser := converters.UserToPBUser(m.User)
 				f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, Extension: []byte(extension), UpdatedAt: time.Now()}
-
 				pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(f)
-
 				if err != nil {
 					m.Err = err
 					m.selectedFile = ""
@@ -393,6 +410,7 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
+				// insert file
 				_, err = m.Client.BinaryFilesClient.Insert(ctx, &pb.InsertBinaryFileRequest{User: pbUser, File: pbBinaryFile})
 				if err != nil {
 					m.Err = err
@@ -402,8 +420,7 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.FileInsertInputs[0].Reset()
 					return m, nil
 				}
-
-				//m.selectedFile = ""
+				// update state
 				m.InsertResult = "BinaryFile inserted successfully!"
 				m.Step = "Binary File_INSERT"
 				m.FileInsertInputs[0].Reset()
@@ -439,6 +456,7 @@ func (m *BinaryFileModel) UpdateInsert(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// updateBinaryFileUpdate function updates update inputs.
 func updateBinaryFileUpdate(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -455,6 +473,7 @@ func updateBinaryFileUpdate(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd
 	return m, cmd
 }
 
+// UpdateUpdate method to update update view.
 func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -472,10 +491,12 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
+				// get name and extension
 				name_ := m.FileUpdateInputs[0].Value()
 				splittedName := strings.Split(m.selectedFile, ".")
 				extension := "." + splittedName[len(splittedName)-1]
 
+				// read file
 				file, err := m.readFile(m.selectedFile)
 				if err != nil {
 					m.Err = err
@@ -485,9 +506,9 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
+				// create proto file
 				pbUser := converters.UserToPBUser(m.User)
 				f := &binary_files.Files{UserID: pbUser.GetUserId(), Name: name_, File: file, Extension: []byte(extension), UpdatedAt: time.Now()}
-
 				pbBinaryFile, err := converters.BinaryFileToPBBinaryFile(f)
 				if err != nil {
 					m.Err = err
@@ -497,6 +518,7 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
+				// update file
 				_, err = m.Client.BinaryFilesClient.Update(ctx, &pb.UpdateBinaryFileRequest{User: pbUser, File: pbBinaryFile})
 				if err != nil {
 					m.Err = err
@@ -506,6 +528,7 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
+				// update state
 				m.UpdateResult = "BinaryFile updated successfully!"
 				m.Step = "Binary File_UPDATE"
 				m.FileUpdateInputs[0].Reset()
@@ -541,6 +564,7 @@ func (m *BinaryFileModel) UpdateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// updateBinaryFileGet function to update get inputs.
 func updateBinaryFileGet(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -557,6 +581,7 @@ func updateBinaryFileGet(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// UpdateGet method to update get view.
 func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -572,10 +597,13 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
+			// get name
 			name_ := m.FileGetInputs[0].Value()
 
+			// convert user to proto user
 			pbUser := converters.UserToPBUser(m.User)
 
+			// get binary file
 			resp, err := m.Client.BinaryFilesClient.Get(ctx, &pb.GetRequest{User: pbUser, Name: name_})
 			if err != nil {
 				m.Err = err
@@ -584,6 +612,7 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return updateBinaryFileGet(m, msg)
 			}
 
+			// convert to binary file
 			file, err := converters.PBBinaryFileToBinaryFile(pbUser.GetUserId(), resp.GetFile())
 			if err != nil {
 				m.Err = err
@@ -592,8 +621,9 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return updateBinaryFileGet(m, msg)
 			}
 
+			// create file at home dir
 			home, _ := os.UserHomeDir()
-			path := fmt.Sprintf("%s/Downloads/%s%s", home, name_, file.Extension)
+			path := fmt.Sprintf("%s/%s%s", home, name_, file.Extension)
 			f, err := os.Create(path)
 			if err != nil {
 				m.Err = err
@@ -602,6 +632,7 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return updateBinaryFileGet(m, msg)
 			}
 
+			// write file
 			buf := bytes.NewBuffer(file.File)
 			_, err = buf.WriteTo(f)
 			if err != nil {
@@ -611,6 +642,7 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return updateBinaryFileGet(m, msg)
 			}
 
+			// update state
 			m.GetResult = fmt.Sprintf("BinaryFile saved to %s!", path)
 			m.Step = "Binary File_GET"
 			m.Err = nil
@@ -623,6 +655,7 @@ func (m *BinaryFileModel) UpdateGet(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return updateBinaryFileGet(m, msg)
 }
 
+// updateBinaryFileDelete function to update delete inputs.
 func updateBinaryFileDelete(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -639,6 +672,7 @@ func updateBinaryFileDelete(m *BinaryFileModel, msg tea.Msg) (tea.Model, tea.Cmd
 	return m, cmd
 }
 
+// UpdateDelete method to update delete view.
 func (m *BinaryFileModel) UpdateDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -654,10 +688,13 @@ func (m *BinaryFileModel) UpdateDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
+			// get name
 			name_ := m.FileDeleteInputs[0].Value()
 
+			// convert user to proto user
 			pbUser := converters.UserToPBUser(m.User)
 
+			// delete file
 			_, err := m.Client.BinaryFilesClient.Delete(ctx, &pb.DeleteBinaryFileRequest{User: pbUser, Name: name_})
 			if err != nil {
 				m.Err = err
@@ -666,6 +703,7 @@ func (m *BinaryFileModel) UpdateDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return updateBinaryFileDelete(m, msg)
 			}
 
+			// update state
 			m.DeleteResult = "BinaryFile deleted successfully!"
 			m.Step = "Binary File_DELETE"
 			m.Err = nil

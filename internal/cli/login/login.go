@@ -1,22 +1,25 @@
+// Package login offers interface to work with login tea model.
 package login
 
 import (
 	"context"
 	"fmt"
-	"github.com/charmbracelet/bubbles/cursor"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
 	"github.com/mishankoGO/GophKeeper/internal/security"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"strings"
 )
 
+// used style.
 var (
 	focusedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
@@ -27,28 +30,29 @@ var (
 	cursorStyle   = focusedStyle.Copy()
 )
 
+// LoginModel struct for current login model state.
 type LoginModel struct {
-	LoginCursorMode cursor.Mode
-	LoginFocusIndex int
-	LoginInputs     []textinput.Model
-	Client          *client.Client
-	User            *users.User
-	Finish          bool
-	Err             error
-	Step            string
+	LoginFocusIndex int               // login field
+	LoginInputs     []textinput.Model // login inputs
+	Client          *client.Client    // client instance
+	User            *users.User       // user instance
+	Finish          bool              // flag if tui is closed
+	Err             error             // occurred error
+	Step            string            // current step
 }
 
+// RegisterModel struct for current register model state.
 type RegisterModel struct {
-	RegisterCursorMode cursor.Mode
-	RegisterFocusIndex int
-	RegisterInputs     []textinput.Model
-	Client             *client.Client
-	User               *users.User
-	Finish             bool
-	Err                error
-	Step               string
+	RegisterFocusIndex int               // register field
+	RegisterInputs     []textinput.Model // register inputs
+	Client             *client.Client    // client instance
+	User               *users.User       // user instance
+	Finish             bool              // flag if tui is closed
+	Err                error             // occurred error
+	Step               string            // current step
 }
 
+// NewLoginModel function creates new LoginModel instance.
 func NewLoginModel(client *client.Client) LoginModel {
 	var t textinput.Model
 	loginInputs := make([]textinput.Model, 2)
@@ -79,6 +83,7 @@ func NewLoginModel(client *client.Client) LoginModel {
 	}
 }
 
+// NewRegisterModel function creates new RegisterModel instance.
 func NewRegisterModel(client *client.Client) RegisterModel {
 	var t textinput.Model
 
@@ -114,11 +119,12 @@ func NewRegisterModel(client *client.Client) RegisterModel {
 	}
 }
 
-/* REGISTER */
+// Init method for register tea model interface.
 func (m *RegisterModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update method updates RegisterModel state.
 func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -241,6 +247,7 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// updateRegisterInputs function updates register inputs.
 func updateRegisterInputs(msg tea.Msg, m RegisterModel) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.RegisterInputs))
 
@@ -253,6 +260,7 @@ func updateRegisterInputs(msg tea.Msg, m RegisterModel) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View method displays register model view.
 func (m RegisterModel) View() string {
 	var b strings.Builder
 
@@ -280,11 +288,12 @@ func (m RegisterModel) View() string {
 	return b.String()
 }
 
-/* LOGIN */
+// Init method for login tea model interface.
 func (m *LoginModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update method updates LoginModel state.
 func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -436,6 +445,7 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// updateLoginInputs function updates login inputs.
 func updateLoginInputs(msg tea.Msg, m *LoginModel) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.LoginInputs))
 
@@ -448,6 +458,7 @@ func updateLoginInputs(msg tea.Msg, m *LoginModel) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View method displays login model view.
 func (m LoginModel) View() string {
 	var b strings.Builder
 	b.WriteString("Enter your login and password\n\n")

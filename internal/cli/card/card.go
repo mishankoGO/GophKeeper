@@ -1,19 +1,22 @@
+// Package card offers interface to work with card tea Model.
 package card
 
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/mishankoGO/GophKeeper/internal/cli/utils"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/cards"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"strings"
-	"time"
 )
 
 // fields to fill.
@@ -56,7 +59,7 @@ type CardModel struct {
 	Err              error             // occurred error
 }
 
-// NewCardModel j
+// NewCardModel function creates new CardModel instance.
 func NewCardModel(client *client.Client) CardModel {
 	var cardInsertInputs = make([]textinput.Model, 4)
 	var cardUpdateInputs = make([]textinput.Model, 4)
@@ -148,10 +151,12 @@ func NewCardModel(client *client.Client) CardModel {
 	return cardModel
 }
 
+// Init method for tea model interface.
 func (m *CardModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update method updates model instance according to step.
 func (m *CardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Step == "Card_INSERT" {
 		return updateCardInsert(msg, m)
@@ -162,10 +167,10 @@ func (m *CardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.Step == "Card_DELETE" {
 		return updateCardDelete(msg, m)
 	}
-	//m.Step = "Card_GET"
-	return m, nil
+	return updateCardGet(msg, m)
 }
 
+// updateCardGet function updates get view.
 func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.CardGetInputs))
 	switch msg := msg.(type) {
@@ -176,10 +181,13 @@ func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
+				// get name
 				name_ := m.CardGetInputs[name].Value()
 
+				// convert user to proto user
 				pbUser := converters.UserToPBUser(m.User)
 
+				// get card
 				getResp, err := m.Client.CardsClient.Get(ctx, &pb.GetRequest{User: pbUser, Name: name_})
 				if err != nil {
 					m.Err = err
@@ -198,6 +206,7 @@ func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 					return m, tea.Batch(cmds...)
 				}
 
+				// update inputs
 				cmds = make([]tea.Cmd, len(m.CardGetInputs))
 				for i := 0; i <= len(m.CardGetInputs)-1; i++ {
 					if i == m.FocusedCard {
@@ -244,6 +253,7 @@ func updateCardGet(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateCardDelete function updates delete view.
 func updateCardDelete(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.CardDeleteInputs))
 	switch msg := msg.(type) {
@@ -322,6 +332,7 @@ func updateCardDelete(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateCardInsert function updates insert view.
 func updateCardInsert(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.CardInsertInputs))
 	switch msg := msg.(type) {
@@ -422,6 +433,7 @@ func updateCardInsert(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateCardUpdate function updates update view.
 func updateCardUpdate(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	var cmds = make([]tea.Cmd, len(m.CardUpdateInputs))
 	switch msg := msg.(type) {
@@ -521,6 +533,7 @@ func updateCardUpdate(msg tea.Msg, m *CardModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View method displays CardModel view.
 func (m CardModel) View() string {
 	if m.Step == "Card_INSERT" {
 		return viewCardInsert(m)
@@ -533,6 +546,7 @@ func (m CardModel) View() string {
 	}
 }
 
+// viewCardGet displays get view.
 func viewCardGet(m CardModel) string {
 	var b strings.Builder
 
@@ -581,6 +595,7 @@ func viewCardGet(m CardModel) string {
 	return b.String()
 }
 
+// viewCardDelete displays delete view.
 func viewCardDelete(m CardModel) string {
 	var b strings.Builder
 
@@ -618,6 +633,7 @@ func viewCardDelete(m CardModel) string {
 	return b.String()
 }
 
+// viewCardInsert displays insert view.
 func viewCardInsert(m CardModel) string {
 	var b strings.Builder
 
@@ -682,6 +698,7 @@ func viewCardInsert(m CardModel) string {
 
 }
 
+// viewCardUpdate displays update view.
 func viewCardUpdate(m CardModel) string {
 	var b strings.Builder
 
@@ -745,11 +762,12 @@ func viewCardUpdate(m CardModel) string {
 	return b.String()
 }
 
+// NextInput is a helper function to increase focus card.
 func (m *CardModel) NextInput() {
 	m.FocusedCard = (m.FocusedCard + 1) % len(m.CardInsertInputs)
 }
 
-// PrevInput focuses the previous input field
+// PrevInput focuses the previous input field.
 func (m *CardModel) PrevInput() {
 	m.FocusedCard--
 	// Wrap around

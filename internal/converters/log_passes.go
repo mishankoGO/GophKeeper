@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
+	"github.com/mishankoGO/GophKeeper/internal/models/log_passes"
 )
 
 // PBLogPassToLogPass converts proto log pass to model log pass.
