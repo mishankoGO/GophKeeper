@@ -22,6 +22,7 @@ import (
 
 // Client contains configuration file, and client for different kinds of data.
 type Client struct {
+	Security          *security.Security         // security client
 	connected         bool                       // connected to server
 	conf              *config.Config             // config file
 	conns             []*grpc.ClientConn         // array of connections
@@ -33,7 +34,7 @@ type Client struct {
 }
 
 // NewClient function create new Client instance.
-func NewClient(conf *config.Config, repo interfaces.Repository, security *security.Security) (*Client, error) {
+func NewClient(conf *config.Config, repo interfaces.Repository) (*Client, error) {
 	// parse port
 	port := ":" + strings.Split(conf.Address, ":")[1]
 
@@ -47,16 +48,16 @@ func NewClient(conf *config.Config, repo interfaces.Repository, security *securi
 		usersClient := clients.NewUsersClient(nil, repo)
 
 		// connect cards client
-		cardsClient := clients.NewCardsClient(nil, repo, security)
+		cardsClient := clients.NewCardsClient(nil, repo)
 
 		// connect texts client
-		textsClient := clients.NewTextsClient(nil, repo, security)
+		textsClient := clients.NewTextsClient(nil, repo)
 
 		// connect binary files client
-		bfClient := clients.NewBinaryFilesClient(nil, repo, security)
+		bfClient := clients.NewBinaryFilesClient(nil, repo)
 
 		// connect log pass client
-		lpClient := clients.NewLogPassesClient(nil, repo, security)
+		lpClient := clients.NewLogPassesClient(nil, repo)
 
 		return &Client{
 			connected:         connected,
@@ -92,16 +93,16 @@ func NewClient(conf *config.Config, repo interfaces.Repository, security *securi
 		}
 
 		// connect cards client
-		cardsClient := clients.NewCardsClient(conn2, repo, security)
+		cardsClient := clients.NewCardsClient(conn2, repo)
 
 		// connect texts client
-		textsClient := clients.NewTextsClient(conn2, repo, security)
+		textsClient := clients.NewTextsClient(conn2, repo)
 
 		// connect binary files client
-		bfClient := clients.NewBinaryFilesClient(conn2, repo, security)
+		bfClient := clients.NewBinaryFilesClient(conn2, repo)
 
 		// connect log pass client
-		lpClient := clients.NewLogPassesClient(conn2, repo, security)
+		lpClient := clients.NewLogPassesClient(conn2, repo)
 
 		// create connections array
 		conns := []*grpc.ClientConn{conn1, conn2}
@@ -175,4 +176,11 @@ func ping(address string) bool {
 		return false
 	}
 	return true
+}
+
+func (c *Client) SetSecurity(security *security.Security) {
+	c.CardsClient.SetSecurity(security)
+	c.TextsClient.SetSecurity(security)
+	c.BinaryFilesClient.SetSecurity(security)
+	c.LogPassesClient.SetSecurity(security)
 }

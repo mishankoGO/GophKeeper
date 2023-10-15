@@ -7,14 +7,8 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/repository/bolt"
-	"github.com/mishankoGO/GophKeeper/internal/security"
 	"log"
 	"os"
-	"time"
-)
-
-const (
-	keyPhrase = "secret"
 )
 
 func main() {
@@ -28,13 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// init security
-	security, err := security.NewSecurity(keyPhrase)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	client, err := client.NewClient(conf, repo, security)
+	client, err := client.NewClient(conf, repo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +30,6 @@ func main() {
 
 	p := tea.NewProgram(cli.InitialModel(client), tea.WithAltScreen())
 
-	fmt.Println(time.Now())
 	// Run returns the model as a tea.Model.
 	m, err := p.Run()
 	if err != nil {

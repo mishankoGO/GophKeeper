@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mishankoGO/GophKeeper/internal/cli/binary_file"
 	"github.com/mishankoGO/GophKeeper/internal/cli/build_version"
@@ -14,7 +13,6 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/cli/text"
 	"github.com/mishankoGO/GophKeeper/internal/client"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
-	"os"
 	"strings"
 )
 
@@ -65,10 +63,6 @@ func InitialModel(client *client.Client) *Model {
 		Client:          client,
 		Step:            "index",
 	}
-	d, _ := os.UserHomeDir()
-	fs, _ := os.ReadDir(d)
-	fmt.Println(d)
-	fmt.Println(fs[37].Name())
 	return &m
 }
 

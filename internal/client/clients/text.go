@@ -31,12 +31,12 @@ type TextsClient struct {
 }
 
 // NewTextsClient creates new Texts client.
-func NewTextsClient(cc *grpc.ClientConn, repo interfaces.Repository, security *security.Security) *TextsClient {
+func NewTextsClient(cc *grpc.ClientConn, repo interfaces.Repository) *TextsClient {
 	if cc != nil {
 		service := pb.NewTextsClient(cc)
-		return &TextsClient{service: service, Security: security, repo: repo, offline: false}
+		return &TextsClient{service: service, repo: repo, offline: false}
 	}
-	return &TextsClient{repo: repo, Security: security, offline: true}
+	return &TextsClient{repo: repo, offline: true}
 }
 
 // Insert method inserts new Texts.
@@ -173,22 +173,6 @@ func (c *TextsClient) List(ctx context.Context, req *pb.ListTextRequest) (*pb.Li
 		return nil, nil, status.Errorf(codes.Internal, "error listing texts: %v", err)
 	}
 
-	//pbTs := make([]*pb.Text, len(ts))
-	//for _, lp := range ts {
-	//	pbT, err := converters.TextToPBText(lp)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error converting text: %v", err)
-	//	}
-	//	// decrypt data
-	//	decData, err := c.Security.DecryptData(pbT.Text)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error decrypting text: %v", err)
-	//	}
-	//
-	//	pbT.Text = bytes.Trim(decData, "\"\n")
-	//	pbTs = append(pbTs, pbT)
-	//}
-
 	resp, err := c.service.List(ctx, req)
 	if err != nil {
 		return nil, nil, status.Errorf(codes.Internal, "error listing data from server: %v", err)
@@ -318,4 +302,9 @@ func (c *TextsClient) Sync(ctx context.Context, req *pb.ListTextRequest) error {
 	}
 
 	return nil
+}
+
+// SetSecurity method to set security attribute.
+func (c *TextsClient) SetSecurity(security *security.Security) {
+	c.Security = security
 }

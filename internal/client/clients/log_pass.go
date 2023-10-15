@@ -31,12 +31,12 @@ type LogPassesClient struct {
 }
 
 // NewLogPassesClient creates new LogPasses client.
-func NewLogPassesClient(cc *grpc.ClientConn, repo interfaces.Repository, security *security.Security) *LogPassesClient {
+func NewLogPassesClient(cc *grpc.ClientConn, repo interfaces.Repository) *LogPassesClient {
 	if cc != nil {
 		service := pb.NewLogPassesClient(cc)
-		return &LogPassesClient{service: service, repo: repo, Security: security, offline: false}
+		return &LogPassesClient{service: service, repo: repo, offline: false}
 	}
-	return &LogPassesClient{repo: repo, Security: security, offline: true}
+	return &LogPassesClient{repo: repo, offline: true}
 }
 
 // Insert method inserts new LogPasses.
@@ -199,27 +199,6 @@ func (c *LogPassesClient) List(ctx context.Context, req *pb.ListLogPassRequest) 
 		return nil, nil, status.Errorf(codes.Internal, "error listing log passes: %v", err)
 	}
 
-	//pbLPs := make([]*pb.LogPass, len(lps))
-	//for _, lp := range lps {
-	//	pbLP, err := converters.LogPassToPBLogPass(lp)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error converting log pass: %v", err)
-	//	}
-	//	// decrypt data
-	//	decLogin, err := c.Security.DecryptData(pbLP.Login)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
-	//	}
-	//	decPass, err := c.Security.DecryptData(pbLP.Pass)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
-	//	}
-	//
-	//	pbLP.Login = bytes.Trim(decLogin, "\"\n")
-	//	pbLP.Pass = bytes.Trim(decPass, "\"\n")
-	//	pbLPs = append(pbLPs, pbLP)
-	//}
-
 	resp, err := c.service.List(ctx, req)
 	if err != nil {
 		return nil, nil, status.Errorf(codes.Internal, "error listing log passes: %v", err)
@@ -349,4 +328,9 @@ func (c *LogPassesClient) Sync(ctx context.Context, req *pb.ListLogPassRequest) 
 	}
 
 	return nil
+}
+
+// SetSecurity method to set security attribute.
+func (c *LogPassesClient) SetSecurity(security *security.Security) {
+	c.Security = security
 }

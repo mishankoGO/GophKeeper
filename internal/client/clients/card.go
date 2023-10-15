@@ -33,12 +33,12 @@ type CardsClient struct {
 }
 
 // NewCardsClient creates new cards client.
-func NewCardsClient(cc *grpc.ClientConn, repo interfaces.Repository, security *security.Security) *CardsClient {
+func NewCardsClient(cc *grpc.ClientConn, repo interfaces.Repository) *CardsClient {
 	if cc != nil {
 		service := pb.NewCardsClient(cc)
-		return &CardsClient{service: service, repo: repo, Security: security, offline: false}
+		return &CardsClient{service: service, repo: repo, offline: false}
 	}
-	return &CardsClient{repo: repo, Security: security, offline: true}
+	return &CardsClient{repo: repo, offline: true}
 }
 
 // Insert method inserts new card.
@@ -175,22 +175,6 @@ func (c *CardsClient) List(ctx context.Context, req *pb.ListCardRequest) (*pb.Li
 		return nil, nil, status.Errorf(codes.Internal, "error listing cards: %v", err)
 	}
 
-	//pbCards := make([]*pb.Card, len(cards))
-	//for _, card := range cards {
-	//	pbCard, err := converters.CardToPBCard(card)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error converting card: %v", err)
-	//	}
-	//	// decrypt data
-	//	decData, err := c.Security.DecryptData(pbCard.Card)
-	//	if err != nil {
-	//		return nil, status.Errorf(codes.Internal, "error decrypting data: %v", err)
-	//	}
-	//
-	//	// set decrypted card to Card
-	//	pbCard.Card = bytes.Trim(decData, "\"\n")
-	//	pbCards = append(pbCards, pbCard)
-	//}
 	resp, err := c.service.List(ctx, req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error listing data from server: %v", err)
@@ -320,4 +304,9 @@ func (c *CardsClient) Sync(ctx context.Context, req *pb.ListCardRequest) error {
 	}
 
 	return nil
+}
+
+// SetSecurity method to set security attribute.
+func (c *CardsClient) SetSecurity(security *security.Security) {
+	c.Security = security
 }

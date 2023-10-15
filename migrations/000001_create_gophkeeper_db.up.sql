@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS credentials (
 CREATE TABLE IF NOT EXISTS users (
         user_id UUID,
         login VARCHAR(50) NOT NULL,
-        created_at TIMESTAMP,
+        created_at TIMESTAMP with time zone,
         PRIMARY KEY(user_id),
         CONSTRAINT fk_credential
             FOREIGN KEY(user_id)
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS log_passes (
         name VARCHAR(50) NOT NULL UNIQUE,
         login bytea NOT NULL,
         password bytea NOT NULL,
-        updated_at TIMESTAMP,
+        updated_at TIMESTAMP with time zone,
         meta JSONB,
         PRIMARY KEY(log_pass_id),
         CONSTRAINT fk_log_pass
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS texts (
         user_id UUID,
         name VARCHAR(50) NOT NULL UNIQUE,
         text bytea NOT NULL,
-        updated_at TIMESTAMP,
+        updated_at TIMESTAMP with time zone,
         meta JSONB,
         PRIMARY KEY(text_id),
         CONSTRAINT fk_text
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS cards (
         user_id UUID,
         name VARCHAR(50) NOT NULL UNIQUE,
         card bytea NOT NULL,
-        updated_at TIMESTAMP,
+        updated_at TIMESTAMP with time zone,
         meta JSONB,
         PRIMARY KEY(card_id),
         CONSTRAINT fk_card

@@ -56,7 +56,6 @@ func (u *UsersClient) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		// hash password
 		hashPass := hash.HashPass([]byte(req.GetCred().GetPassword()))
 
-		fmt.Println(req.GetCred().GetPassword(), cred.Password)
 		// check if password is valid
 		if cred.Password != hashPass {
 			return nil, status.Errorf(codes.NotFound, "incorrect username/password: %v", err)

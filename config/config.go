@@ -21,8 +21,6 @@ func NewConfig(configPath string) (*Config, error) {
 // Config collects client and server configurations.
 type Config struct {
 	Address     string `json:"address"`      // server address
-	Key         string `json:"key"`          // hash key
-	CryptoKey   string `json:"crypto_key"`   // path to crypto key
 	DatabaseDSN string `json:"database_dsn"` // database address
 }
 

@@ -32,13 +32,13 @@ type BinaryFilesClient struct {
 }
 
 // NewBinaryFilesClient creates new BinaryFiles client.
-func NewBinaryFilesClient(cc *grpc.ClientConn, repo interfaces.Repository, security *security.Security) *BinaryFilesClient {
+func NewBinaryFilesClient(cc *grpc.ClientConn, repo interfaces.Repository) *BinaryFilesClient {
 	if cc != nil {
 		service := pb.NewBinaryFilesClient(cc)
-		return &BinaryFilesClient{service: service, Security: security, repo: repo, offline: false}
+		return &BinaryFilesClient{service: service, repo: repo, offline: false}
 
 	}
-	return &BinaryFilesClient{repo: repo, Security: security, offline: true}
+	return &BinaryFilesClient{repo: repo, offline: true}
 }
 
 // Insert method inserts new BinaryFiles.
@@ -329,4 +329,9 @@ func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequ
 	}
 
 	return nil
+}
+
+// SetSecurity method to set security attribute.
+func (c *BinaryFilesClient) SetSecurity(security *security.Security) {
+	c.Security = security
 }

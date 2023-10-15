@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	keyPhrase     = "secret"         // key phrase from user
+	keyPhrase     = "secret"         // key phrase for data encryption
 	secretKey     = "secret"         // secret key for jwt
 	tokenDuration = 30 * time.Minute // duration of the token
 )
@@ -41,6 +41,7 @@ func main() {
 	grpcServer := server.NewServer(repo, jwtManager, security, conf)
 
 	// run server
+	log.Println("Running server...")
 	err = grpcServer.Serve()
 	if err != nil {
 		log.Fatal(err)

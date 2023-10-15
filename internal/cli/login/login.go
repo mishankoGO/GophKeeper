@@ -11,6 +11,9 @@ import (
 	"github.com/mishankoGO/GophKeeper/internal/converters"
 	pb "github.com/mishankoGO/GophKeeper/internal/grpc"
 	"github.com/mishankoGO/GophKeeper/internal/models/users"
+	"github.com/mishankoGO/GophKeeper/internal/security"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"strings"
 )
 
@@ -138,6 +141,29 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
 			if s == "enter" && m.RegisterFocusIndex == len(m.RegisterInputs) {
+				if m.RegisterInputs[1].Value() != m.RegisterInputs[2].Value() {
+					m.Err = status.Errorf(codes.Internal, "Entered passwords are not equal")
+					m.RegisterFocusIndex = 0
+					cmds := make([]tea.Cmd, len(m.RegisterInputs))
+					for i := 0; i <= len(m.RegisterInputs)-1; i++ {
+						if i == m.RegisterFocusIndex {
+							// Set focused state
+							cmds[i] = m.RegisterInputs[i].Focus()
+							m.RegisterInputs[i].PromptStyle = focusedStyle
+							m.RegisterInputs[i].TextStyle = focusedStyle
+							m.RegisterInputs[i].Reset()
+							continue
+						}
+						// Remove focused state
+						m.RegisterInputs[i].Blur()
+						m.RegisterInputs[i].PromptStyle = noStyle
+						m.RegisterInputs[i].TextStyle = noStyle
+						m.RegisterInputs[i].Reset()
+					}
+
+					return m, tea.Batch(cmds...)
+				}
+
 				// login
 				cred := &pb.Credential{Login: m.RegisterInputs[0].Value(), Password: m.RegisterInputs[1].Value()}
 				ctx, cancel := context.WithCancel(context.Background())
@@ -309,6 +335,33 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					return m, tea.Batch(cmds...)
 				}
+
+				// set security
+				keyPhrase := fmt.Sprintf("%s_%s_%s_%s", cred.GetLogin(), cred.GetPassword(), cred.GetLogin(), cred.GetPassword())
+				security, err := security.NewSecurity(keyPhrase)
+				if err != nil {
+					m.Err = err
+					m.LoginFocusIndex = 0
+					cmds := make([]tea.Cmd, len(m.LoginInputs))
+					for i := 0; i <= len(m.LoginInputs)-1; i++ {
+						if i == m.LoginFocusIndex {
+							// Set focused state
+							cmds[i] = m.LoginInputs[i].Focus()
+							m.LoginInputs[i].PromptStyle = focusedStyle
+							m.LoginInputs[i].TextStyle = focusedStyle
+							m.LoginInputs[i].Reset()
+							continue
+						}
+						// Remove focused state
+						m.LoginInputs[i].Blur()
+						m.LoginInputs[i].PromptStyle = noStyle
+						m.LoginInputs[i].TextStyle = noStyle
+						m.LoginInputs[i].Reset()
+					}
+
+					return m, tea.Batch(cmds...)
+				}
+				m.Client.SetSecurity(security)
 
 				// sync data
 				user := converters.PBUserToUser(logResp.GetUser())
