@@ -52,4 +52,7 @@ build-client:
 evans:
 	 evans -r repl -p 8080
 
-.PHONY: pg-run migrateup dropdb migrateup migratedown proto-gen run-server run-server-windows run-server-mac run-server-linux run-client-windows run-client-mac run-client-linux build-server build-client
+docs:
+	godoc -http=:8081
+
+.PHONY: pg-run migrateup dropdb migrateup migratedown proto-gen run-server run-server-windows run-server-mac run-server-linux run-client-windows run-client-mac run-client-linux build-server build-client docs
