@@ -213,32 +213,9 @@ func (c *CardsClient) Sync(ctx context.Context, req *pb.ListCardRequest) error {
 
 			// update common cards
 			if sname == cname {
-				if cc.UpdatedAt.After(sc.UpdatedAt.AsTime()) {
-					// convert card to proto card
-					protoC, err := converters.CardToPBCard(cc)
-					if err != nil {
-						return err
-					}
-
-					// update server card
-					reqS := &pb.UpdateCardRequest{User: req.GetUser(), Card: protoC}
-					_, err = c.service.Update(ctx, reqS)
-					if err != nil {
-						return err
-					}
-					dataPrimary = "client"
-				} else {
-					// convert proto card to card
-					card, err := converters.PBCardToCard(req.GetUser().GetUserId(), sc)
-					if err != nil {
-						return err
-					}
-
-					// update client card
-					_, err = c.repo.UpdateC(card)
-					if err != nil {
-						return err
-					}
+				err = c.updateCommonFiles(ctx, req, cc, sc)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -246,61 +223,27 @@ func (c *CardsClient) Sync(ctx context.Context, req *pb.ListCardRequest) error {
 
 	if dataPrimary == "server" {
 		// insert missing server cards to client
-		for _, sc := range serverCs.GetCards() {
-			// convert proto card to model card
-			card, err := converters.PBCardToCard(req.GetUser().GetUserId(), sc)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(sc.Name, clientNames) {
-				// insert missing card to client db
-				err = c.repo.InsertC(card)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertServerToClient(req, serverCs, clientNames)
+		if err != nil {
+			return err
 		}
 
 		// delete cards
-		for _, cc := range clientCs {
-			if !util.StringInSlice(cc.Name, serverNames) {
-				// delete cards absent in server
-				err = c.repo.DeleteC(cc.Name)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromClient(clientCs, serverNames)
+		if err != nil {
+			return err
 		}
 	} else if dataPrimary == "client" {
 		// insert missing client cards to cards
-		for _, cc := range clientCs {
-			// convert model card to proto card
-			protoC, err := converters.CardToPBCard(cc)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(cc.Name, serverNames) {
-				// insert missing card to server db
-				reqS := &pb.InsertCardRequest{User: req.GetUser(), Card: protoC}
-				_, err = c.service.Insert(ctx, reqS)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertClientToServer(ctx, clientCs, serverNames, req)
+		if err != nil {
+			return err
 		}
 
 		// delete cards
-		for _, sc := range serverCs.GetCards() {
-			if !util.StringInSlice(sc.GetName(), clientNames) {
-				// delete cards absent in client
-				resD := &pb.DeleteCardRequest{User: req.GetUser(), Name: sc.GetName()}
-				_, err = c.service.Delete(ctx, resD)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromServer(ctx, req, serverCs, clientNames)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -310,4 +253,115 @@ func (c *CardsClient) Sync(ctx context.Context, req *pb.ListCardRequest) error {
 // SetSecurity method to set security attribute.
 func (c *CardsClient) SetSecurity(security *security.Security) {
 	c.Security = security
+}
+
+func (c *CardsClient) updateCommonFiles(
+	ctx context.Context,
+	req *pb.ListCardRequest,
+	cc *cards.Cards,
+	sc *pb.Card) error {
+	if cc.UpdatedAt.After(sc.UpdatedAt.AsTime()) {
+		// convert card to proto card
+		protoC, err := converters.CardToPBCard(cc)
+		if err != nil {
+			return err
+		}
+
+		// update server card
+		reqS := &pb.UpdateCardRequest{User: req.GetUser(), Card: protoC}
+		_, err = c.service.Update(ctx, reqS)
+		if err != nil {
+			return err
+		}
+	} else {
+		// convert proto card to card
+		card, err := converters.PBCardToCard(req.GetUser().GetUserId(), sc)
+		if err != nil {
+			return err
+		}
+
+		// update client card
+		_, err = c.repo.UpdateC(card)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *CardsClient) insertServerToClient(
+	req *pb.ListCardRequest,
+	serverCs *pb.ListCardResponse,
+	clientNames []string) error {
+	for _, sc := range serverCs.GetCards() {
+		// convert proto card to model card
+		card, err := converters.PBCardToCard(req.GetUser().GetUserId(), sc)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(sc.Name, clientNames) {
+			// insert missing card to client db
+			err = c.repo.InsertC(card)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *CardsClient) deleteFromClient(clientCs []*cards.Cards, serverNames []string) error {
+	for _, cc := range clientCs {
+		if !util.StringInSlice(cc.Name, serverNames) {
+			// delete cards absent in server
+			err := c.repo.DeleteC(cc.Name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *CardsClient) insertClientToServer(
+	ctx context.Context,
+	clientCs []*cards.Cards,
+	serverNames []string,
+	req *pb.ListCardRequest) error {
+	for _, cc := range clientCs {
+		// convert model card to proto card
+		protoC, err := converters.CardToPBCard(cc)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(cc.Name, serverNames) {
+			// insert missing card to server db
+			reqS := &pb.InsertCardRequest{User: req.GetUser(), Card: protoC}
+			_, err = c.service.Insert(ctx, reqS)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *CardsClient) deleteFromServer(
+	ctx context.Context,
+	req *pb.ListCardRequest,
+	serverCs *pb.ListCardResponse,
+	clientNames []string) error {
+	for _, sc := range serverCs.GetCards() {
+		if !util.StringInSlice(sc.GetName(), clientNames) {
+			// delete cards absent in client
+			resD := &pb.DeleteCardRequest{User: req.GetUser(), Name: sc.GetName()}
+			_, err := c.service.Delete(ctx, resD)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

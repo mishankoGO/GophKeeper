@@ -212,32 +212,9 @@ func (c *TextsClient) Sync(ctx context.Context, req *pb.ListTextRequest) error {
 
 			// update common files
 			if sname == cname {
-				if ct.UpdatedAt.After(st.UpdatedAt.AsTime()) {
-					// convert text to proto text
-					protoT, err := converters.TextToPBText(ct)
-					if err != nil {
-						return err
-					}
-
-					// update server text
-					reqS := &pb.UpdateTextRequest{User: req.GetUser(), Text: protoT}
-					_, err = c.service.Update(ctx, reqS)
-					if err != nil {
-						return err
-					}
-					dataPrimary = "client"
-				} else {
-					// convert proto text to text
-					t, err := converters.PBTextToText(req.GetUser().GetUserId(), st)
-					if err != nil {
-						return err
-					}
-
-					// update client text
-					_, err = c.repo.UpdateT(t)
-					if err != nil {
-						return err
-					}
+				err = c.updateCommonFiles(ctx, req, ct, st)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -245,61 +222,27 @@ func (c *TextsClient) Sync(ctx context.Context, req *pb.ListTextRequest) error {
 
 	if dataPrimary == "server" {
 		// insert missing server texts to client
-		for _, st := range serverTs.GetTexts() {
-			// convert proto text to model text
-			t, err := converters.PBTextToText(req.GetUser().GetUserId(), st)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(st.Name, clientNames) {
-				// insert missing text to client db
-				err = c.repo.InsertT(t)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertServerToClient(req, serverTs, clientNames)
+		if err != nil {
+			return err
 		}
 
 		// delete files
-		for _, ct := range clientTs {
-			if !util.StringInSlice(ct.Name, serverNames) {
-				// delete texts absent in server
-				err = c.repo.DeleteT(ct.Name)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromClient(clientTs, serverNames)
+		if err != nil {
+			return err
 		}
 	} else if dataPrimary == "client" {
 		// insert missing client texts to text
-		for _, ct := range clientTs {
-			// convert model text to proto text
-			protoT, err := converters.TextToPBText(ct)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(ct.Name, serverNames) {
-				// insert missing text to server db
-				reqS := &pb.InsertTextRequest{User: req.GetUser(), Text: protoT}
-				_, err = c.service.Insert(ctx, reqS)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertClientToServer(ctx, clientTs, serverNames, req)
+		if err != nil {
+			return err
 		}
 
 		// delete files
-		for _, st := range serverTs.GetTexts() {
-			if !util.StringInSlice(st.GetName(), clientNames) {
-				// delete texts absent in client
-				resD := &pb.DeleteTextRequest{User: req.GetUser(), Name: st.GetName()}
-				_, err = c.service.Delete(ctx, resD)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromServer(ctx, req, serverTs, clientNames)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -309,4 +252,115 @@ func (c *TextsClient) Sync(ctx context.Context, req *pb.ListTextRequest) error {
 // SetSecurity method to set security attribute.
 func (c *TextsClient) SetSecurity(security *security.Security) {
 	c.Security = security
+}
+
+func (c *TextsClient) updateCommonFiles(
+	ctx context.Context,
+	req *pb.ListTextRequest,
+	ct *texts.Texts,
+	st *pb.Text) error {
+	if ct.UpdatedAt.After(st.UpdatedAt.AsTime()) {
+		// convert text to proto text
+		protoT, err := converters.TextToPBText(ct)
+		if err != nil {
+			return err
+		}
+
+		// update server text
+		reqS := &pb.UpdateTextRequest{User: req.GetUser(), Text: protoT}
+		_, err = c.service.Update(ctx, reqS)
+		if err != nil {
+			return err
+		}
+	} else {
+		// convert proto text to text
+		t, err := converters.PBTextToText(req.GetUser().GetUserId(), st)
+		if err != nil {
+			return err
+		}
+
+		// update client text
+		_, err = c.repo.UpdateT(t)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *TextsClient) insertServerToClient(
+	req *pb.ListTextRequest,
+	serverTs *pb.ListTextResponse,
+	clientNames []string) error {
+	for _, st := range serverTs.GetTexts() {
+		// convert proto text to model text
+		t, err := converters.PBTextToText(req.GetUser().GetUserId(), st)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(st.Name, clientNames) {
+			// insert missing text to client db
+			err = c.repo.InsertT(t)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *TextsClient) deleteFromClient(clientTs []*texts.Texts, serverNames []string) error {
+	for _, ct := range clientTs {
+		if !util.StringInSlice(ct.Name, serverNames) {
+			// delete texts absent in server
+			err := c.repo.DeleteT(ct.Name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *TextsClient) insertClientToServer(
+	ctx context.Context,
+	clientTs []*texts.Texts,
+	serverNames []string,
+	req *pb.ListTextRequest) error {
+	for _, ct := range clientTs {
+		// convert model text to proto text
+		protoT, err := converters.TextToPBText(ct)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(ct.Name, serverNames) {
+			// insert missing text to server db
+			reqS := &pb.InsertTextRequest{User: req.GetUser(), Text: protoT}
+			_, err = c.service.Insert(ctx, reqS)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *TextsClient) deleteFromServer(
+	ctx context.Context,
+	req *pb.ListTextRequest,
+	serverTs *pb.ListTextResponse,
+	clientNames []string) error {
+	for _, st := range serverTs.GetTexts() {
+		if !util.StringInSlice(st.GetName(), clientNames) {
+			// delete texts absent in client
+			resD := &pb.DeleteTextRequest{User: req.GetUser(), Name: st.GetName()}
+			_, err := c.service.Delete(ctx, resD)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

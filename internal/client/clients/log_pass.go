@@ -238,32 +238,9 @@ func (c *LogPassesClient) Sync(ctx context.Context, req *pb.ListLogPassRequest) 
 
 			// update common log passes
 			if sname == cname {
-				if clp.UpdatedAt.After(slp.UpdatedAt.AsTime()) {
-					// convert log pass to proto log pass
-					protoLP, err := converters.LogPassToPBLogPass(clp)
-					if err != nil {
-						return err
-					}
-
-					// update server log pass
-					reqS := &pb.UpdateLogPassRequest{User: req.GetUser(), LogPass: protoLP}
-					_, err = c.service.Update(ctx, reqS)
-					if err != nil {
-						return err
-					}
-					dataPrimary = "client"
-				} else {
-					// convert proto log pass to log pass
-					lp, err := converters.PBLogPassToLogPass(req.GetUser().GetUserId(), slp)
-					if err != nil {
-						return err
-					}
-
-					// update client log pass
-					_, err = c.repo.UpdateLP(lp)
-					if err != nil {
-						return err
-					}
+				err = c.updateCommonFiles(ctx, req, clp, slp)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -271,61 +248,27 @@ func (c *LogPassesClient) Sync(ctx context.Context, req *pb.ListLogPassRequest) 
 
 	if dataPrimary == "server" {
 		// insert missing server log passes to client
-		for _, slp := range serverLPs.GetLogPasses() {
-			// convert proto log pass to model log pass
-			lp, err := converters.PBLogPassToLogPass(req.GetUser().GetUserId(), slp)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(slp.Name, clientNames) {
-				// insert missing log pass to client db
-				err = c.repo.InsertLP(lp)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertServerToClient(req, serverLPs, clientNames)
+		if err != nil {
+			return err
 		}
 
 		// delete log passes
-		for _, clp := range clientLPs {
-			if !util.StringInSlice(clp.Name, serverNames) {
-				// delete log passes absent in server
-				err = c.repo.DeleteLP(clp.Name)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromClient(clientLPs, serverNames)
+		if err != nil {
+			return err
 		}
 	} else if dataPrimary == "client" {
 		// insert missing client log passes to log pass
-		for _, clp := range clientLPs {
-			// convert model log pass to proto log pass
-			protoLP, err := converters.LogPassToPBLogPass(clp)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(clp.Name, serverNames) {
-				// insert missing log pass to server db
-				reqS := &pb.InsertLogPassRequest{User: req.GetUser(), LogPass: protoLP}
-				_, err = c.service.Insert(ctx, reqS)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertClientToServer(ctx, clientLPs, serverNames, req)
+		if err != nil {
+			return err
 		}
 
 		// delete log passes
-		for _, slp := range serverLPs.GetLogPasses() {
-			if !util.StringInSlice(slp.GetName(), clientNames) {
-				// delete log passes absent in client
-				resD := &pb.DeleteLogPassRequest{User: req.GetUser(), Name: slp.GetName()}
-				_, err = c.service.Delete(ctx, resD)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromServer(ctx, req, serverLPs, clientNames)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -335,4 +278,117 @@ func (c *LogPassesClient) Sync(ctx context.Context, req *pb.ListLogPassRequest) 
 // SetSecurity method to set security attribute.
 func (c *LogPassesClient) SetSecurity(security *security.Security) {
 	c.Security = security
+}
+
+func (c *LogPassesClient) updateCommonFiles(
+	ctx context.Context,
+	req *pb.ListLogPassRequest,
+	clp *log_passes.LogPasses,
+	slp *pb.LogPass) error {
+	if clp.UpdatedAt.After(slp.UpdatedAt.AsTime()) {
+		// convert log pass to proto log pass
+		protoLP, err := converters.LogPassToPBLogPass(clp)
+		if err != nil {
+			return err
+		}
+
+		// update server log pass
+		reqS := &pb.UpdateLogPassRequest{User: req.GetUser(), LogPass: protoLP}
+		_, err = c.service.Update(ctx, reqS)
+		if err != nil {
+			return err
+		}
+	} else {
+		// convert proto log pass to log pass
+		lp, err := converters.PBLogPassToLogPass(req.GetUser().GetUserId(), slp)
+		if err != nil {
+			return err
+		}
+
+		// update client log pass
+		_, err = c.repo.UpdateLP(lp)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *LogPassesClient) insertServerToClient(
+	req *pb.ListLogPassRequest,
+	serverLPs *pb.ListLogPassResponse,
+	clientNames []string) error {
+	for _, slp := range serverLPs.GetLogPasses() {
+		// convert proto log pass to model log pass
+		lp, err := converters.PBLogPassToLogPass(req.GetUser().GetUserId(), slp)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(slp.Name, clientNames) {
+			// insert missing log pass to client db
+			err = c.repo.InsertLP(lp)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *LogPassesClient) deleteFromClient(
+	clientLPs []*log_passes.LogPasses,
+	serverNames []string) error {
+	for _, clp := range clientLPs {
+		if !util.StringInSlice(clp.Name, serverNames) {
+			// delete log passes absent in server
+			err := c.repo.DeleteLP(clp.Name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *LogPassesClient) insertClientToServer(
+	ctx context.Context,
+	clientLPs []*log_passes.LogPasses,
+	serverNames []string,
+	req *pb.ListLogPassRequest) error {
+	for _, clp := range clientLPs {
+		// convert model log pass to proto log pass
+		protoLP, err := converters.LogPassToPBLogPass(clp)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(clp.Name, serverNames) {
+			// insert missing log pass to server db
+			reqS := &pb.InsertLogPassRequest{User: req.GetUser(), LogPass: protoLP}
+			_, err = c.service.Insert(ctx, reqS)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *LogPassesClient) deleteFromServer(
+	ctx context.Context,
+	req *pb.ListLogPassRequest,
+	serverLPs *pb.ListLogPassResponse,
+	clientNames []string) error {
+	for _, slp := range serverLPs.GetLogPasses() {
+		if !util.StringInSlice(slp.GetName(), clientNames) {
+			// delete log passes absent in client
+			resD := &pb.DeleteLogPassRequest{User: req.GetUser(), Name: slp.GetName()}
+			_, err := c.service.Delete(ctx, resD)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

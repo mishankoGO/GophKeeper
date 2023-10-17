@@ -240,31 +240,9 @@ func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequ
 
 			// update common files
 			if sname == cname {
-				if cbf.UpdatedAt.After(sbf.UpdatedAt.AsTime()) {
-					// convert binary file to proto binary file
-					protoBF, err := converters.BinaryFileToPBBinaryFile(cbf)
-					if err != nil {
-						return err
-					}
-
-					// update server binary file
-					reqS := &pb.UpdateBinaryFileRequest{User: req.GetUser(), File: protoBF}
-					_, err = c.service.Update(ctx, reqS)
-					if err != nil {
-						return err
-					}
-				} else {
-					// convert proto binary file to binary file
-					bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
-					if err != nil {
-						return err
-					}
-
-					// update client binary file
-					_, err = c.repo.UpdateBF(bf)
-					if err != nil {
-						return err
-					}
+				err = c.updateCommonFiles(ctx, req, cbf, sbf)
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -272,61 +250,27 @@ func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequ
 
 	if dataPrimary == "server" {
 		// insert missing server binary files to client
-		for _, sbf := range serverBFs.GetBinaryFiles() {
-			// convert proto binary file to model binary file
-			bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(sbf.Name, clientNames) {
-				// insert missing binary file to client db
-				err = c.repo.InsertBF(bf)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertServerToClient(req, serverBFs, clientNames)
+		if err != nil {
+			return err
 		}
 
 		// delete files
-		for _, cbf := range clientBFs {
-			if !util.StringInSlice(cbf.Name, serverNames) {
-				// delete binary files absent in server
-				err = c.repo.DeleteBF(cbf.Name)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromClient(clientBFs, serverNames)
+		if err != nil {
+			return err
 		}
 	} else if dataPrimary == "client" {
 		// insert missing client binary files to binary file
-		for _, cbf := range clientBFs {
-			// convert model binary file to proto binary file
-			protoBF, err := converters.BinaryFileToPBBinaryFile(cbf)
-			if err != nil {
-				return err
-			}
-
-			if !util.StringInSlice(cbf.Name, serverNames) {
-				// insert missing binary file to server db
-				reqS := &pb.InsertBinaryFileRequest{User: req.GetUser(), File: protoBF}
-				_, err = c.service.Insert(ctx, reqS)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.insertClientToServer(ctx, clientBFs, serverNames, req)
+		if err != nil {
+			return err
 		}
 
 		// delete files
-		for _, sbf := range serverBFs.GetBinaryFiles() {
-			if !util.StringInSlice(sbf.GetName(), clientNames) {
-				// delete binary files absent in client
-				resD := &pb.DeleteBinaryFileRequest{User: req.GetUser(), Name: sbf.GetName()}
-				_, err = c.service.Delete(ctx, resD)
-				if err != nil {
-					return err
-				}
-			}
+		err = c.deleteFromServer(ctx, req, serverBFs, clientNames)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -336,4 +280,119 @@ func (c *BinaryFilesClient) Sync(ctx context.Context, req *pb.ListBinaryFileRequ
 // SetSecurity method to set security attribute.
 func (c *BinaryFilesClient) SetSecurity(security *security.Security) {
 	c.Security = security
+}
+
+func (c *BinaryFilesClient) updateCommonFiles(
+	ctx context.Context,
+	req *pb.ListBinaryFileRequest,
+	cbf *binary_files.Files,
+	sbf *pb.BinaryFile) error {
+	if cbf.UpdatedAt.After(sbf.UpdatedAt.AsTime()) {
+		// convert binary file to proto binary file
+		protoBF, err := converters.BinaryFileToPBBinaryFile(cbf)
+		if err != nil {
+			return err
+		}
+
+		// update server binary file
+		reqS := &pb.UpdateBinaryFileRequest{User: req.GetUser(), File: protoBF}
+		_, err = c.service.Update(ctx, reqS)
+		if err != nil {
+			return err
+		}
+	} else {
+		// convert proto binary file to binary file
+		bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
+		if err != nil {
+			return err
+		}
+
+		// update client binary file
+		_, err = c.repo.UpdateBF(bf)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *BinaryFilesClient) insertServerToClient(
+	req *pb.ListBinaryFileRequest,
+	serverBFs *pb.ListBinaryFileResponse,
+	clientNames []string) error {
+
+	for _, sbf := range serverBFs.GetBinaryFiles() {
+		// convert proto binary file to model binary file
+		bf, err := converters.PBBinaryFileToBinaryFile(req.GetUser().GetUserId(), sbf)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(sbf.Name, clientNames) {
+			// insert missing binary file to client db
+			err = c.repo.InsertBF(bf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *BinaryFilesClient) deleteFromClient(clientBFs []*binary_files.Files, serverNames []string) error {
+
+	for _, cbf := range clientBFs {
+		if !util.StringInSlice(cbf.Name, serverNames) {
+			// delete binary files absent in server
+			err := c.repo.DeleteBF(cbf.Name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *BinaryFilesClient) insertClientToServer(
+	ctx context.Context,
+	clientBFs []*binary_files.Files,
+	serverNames []string,
+	req *pb.ListBinaryFileRequest) error {
+
+	for _, cbf := range clientBFs {
+		// convert model binary file to proto binary file
+		protoBF, err := converters.BinaryFileToPBBinaryFile(cbf)
+		if err != nil {
+			return err
+		}
+
+		if !util.StringInSlice(cbf.Name, serverNames) {
+			// insert missing binary file to server db
+			reqS := &pb.InsertBinaryFileRequest{User: req.GetUser(), File: protoBF}
+			_, err = c.service.Insert(ctx, reqS)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *BinaryFilesClient) deleteFromServer(
+	ctx context.Context,
+	req *pb.ListBinaryFileRequest,
+	serverBFs *pb.ListBinaryFileResponse,
+	clientNames []string) error {
+
+	for _, sbf := range serverBFs.GetBinaryFiles() {
+		if !util.StringInSlice(sbf.GetName(), clientNames) {
+			// delete binary files absent in client
+			resD := &pb.DeleteBinaryFileRequest{User: req.GetUser(), Name: sbf.GetName()}
+			_, err := c.service.Delete(ctx, resD)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

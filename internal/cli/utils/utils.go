@@ -7,11 +7,15 @@ import (
 	"strings"
 )
 
+const (
+	cardNumberLimit = 19 // предел
+)
+
 // CCNValidator function to ensure valid card number input.
 func CCNValidator(s string) error {
 	// Credit Card Number should a string less than 20 digits
 	// It should include 16 integers and 3 spaces
-	if len(s) > 16+3 {
+	if len(s) > cardNumberLimit {
 		return fmt.Errorf("CCN is too long")
 	}
 
@@ -42,7 +46,7 @@ func EXPValidator(s string) error {
 		return fmt.Errorf("EXP is invalid")
 	}
 
-	// There should be only one slash and it should be in the 2nd index (3rd character)
+	// There should be only one slash, and it should be in the 2nd index (3rd character)
 	if len(s) >= 3 && (strings.Index(s, "/") != 2 || strings.LastIndex(s, "/") != 2) {
 		return fmt.Errorf("EXP is invalid")
 	}
